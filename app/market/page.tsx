@@ -72,6 +72,25 @@ const SECTOR_MAP: Record<string, { name: string, icon: any, color: string }> = {
     'XLC': { name: 'การสื่อสาร (Communication)', icon: TruckFast, color: '#6366f1' }
 };
 
+const COMPANY_NAMES: Record<string, string> = {
+    'SPY': 'S&P 500 Index',
+    'QQQ': 'NASDAQ 100 Index',
+    'DIA': 'Dow Jones Index',
+    'TSLA': 'Tesla, Inc.',
+    'NVDA': 'NVIDIA Corporation',
+    'AAPL': 'Apple Inc.',
+    'MSFT': 'Microsoft Corp.',
+    'META': 'Meta Platforms',
+    'AMZN': 'Amazon.com, Inc.',
+    'GOOGL': 'Alphabet Inc.',
+    'BRK.B': 'Berkshire Hathaway',
+    'JNJ': 'Johnson & Johnson',
+    'JPM': 'JPMorgan Chase',
+    'V': 'Visa Inc.',
+    'PG': 'Procter & Gamble'
+};
+
+
 // --- COMPONENTS ---
 
 const SentimentGauge = ({ score }: { score: number }) => {
@@ -163,7 +182,7 @@ export default function MarketPulsePage() {
                 .filter((item: any) => mainSymbols.includes(item.symbol))
                 .map((item: any) => ({
                     symbol: item.symbol,
-                    name: item.symbol, // We'll use symbol as name for speed, or could add a map
+                    name: COMPANY_NAMES[item.symbol] || item.symbol,
                     price: item.data?.c || 0,
                     changePercent: item.data?.dp || 0
                 }));

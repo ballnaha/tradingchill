@@ -409,80 +409,110 @@ function HomeContent() {
       )}
 
       {/* Search Bar */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: { xs: 6, md: 8 } }}>
-        <Paper elevation={0} sx={{
-          width: '100%', maxWidth: 700,
-          p: { xs: '8px', md: '6px 6px 6px 20px' },
-          borderRadius: { xs: 4, md: 10 },
-          bgcolor: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'stretch', md: 'center' },
-          gap: { xs: 1.5, md: 0 },
-          transition: 'all 0.3s',
-          '&:focus-within': { borderColor: '#38bdf8', boxShadow: '0 0 25px rgba(56, 189, 248, 0.15)' }
-        }}>
-          <Stack direction="row" alignItems="center" sx={{ flex: 1, px: { xs: 1.5, md: 0 } }}>
-            <SearchNormal1 size="24" color="#38bdf8" />
-            <Autocomplete
-              fullWidth
-              freeSolo
-              options={options}
-              getOptionLabel={(o) => typeof o === 'string' ? o : o.symbol}
-              onInputChange={(e, v) => {
-                const upper = v.toUpperCase();
-                setSymbol(upper);
-                searchSymbols(upper);
-              }}
-              onChange={(e, v: any) => {
-                if (v) {
-                  const s = (typeof v === 'string' ? v : v.symbol).toUpperCase();
-                  setSymbol(s);
-                  fetchStock(s);
-                }
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  variant="standard"
-                  placeholder="ค้นหารหัสหุ้น (e.g. TSLA, NVDA)"
-                  InputProps={{
-                    ...params.InputProps,
-                    disableUnderline: true,
-                    sx: {
-                      ml: 2,
-                      color: 'white',
-                      fontSize: { xs: '1rem', md: '1.1rem' },
-                      '& input': { textTransform: 'uppercase' } // Visual uppercase while typing
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: { xs: 5, md: 8 }, px: { xs: 2.5, md: 0 } }}>
+        <Box sx={{ width: '100%', maxWidth: 700 }}>
+          <Stack spacing={2}>
+            <Paper elevation={0} sx={{
+              p: { xs: '12px 16px', md: '6px 6px 6px 20px' },
+              borderRadius: { xs: 4, md: 10 },
+              bgcolor: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.3s',
+              '&:focus-within': { borderColor: '#38bdf8', boxShadow: '0 0 25px rgba(56, 189, 248, 0.15)' }
+            }}>
+              <Stack direction="row" alignItems="center" sx={{ flex: 1 }}>
+                <SearchNormal1 size="24" color="#38bdf8" />
+                <Autocomplete
+                  fullWidth
+                  freeSolo
+                  options={options}
+                  getOptionLabel={(o) => typeof o === 'string' ? o : o.symbol}
+                  onInputChange={(e, v) => {
+                    const upper = v.toUpperCase();
+                    setSymbol(upper);
+                    searchSymbols(upper);
+                  }}
+                  onChange={(e, v: any) => {
+                    if (v) {
+                      const s = (typeof v === 'string' ? v : v.symbol).toUpperCase();
+                      setSymbol(s);
+                      fetchStock(s);
                     }
                   }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      variant="standard"
+                      placeholder="ค้นหารหัสหุ้น (e.g. TSLA, NVDA)"
+                      InputProps={{
+                        ...params.InputProps,
+                        disableUnderline: true,
+                        sx: {
+                          ml: 2,
+                          color: 'white',
+                          fontSize: { xs: '1.05rem', md: '1.1rem' },
+                          '& input': { textTransform: 'uppercase' }
+                        }
+                      }}
+                    />
+                  )}
+                  renderOption={(props, o: any) => {
+                    const { key, ...rest } = props;
+                    const uniqueKey = key || `${o.symbol}-${o.description}`;
+                    return (
+                      <li key={uniqueKey} {...rest}>
+                        <Typography sx={{ fontWeight: 800 }}>{o.symbol}</Typography>
+                        <Typography sx={{ ml: 1, opacity: 0.6 }}>{o.description}</Typography>
+                      </li>
+                    );
+                  }}
+                  sx={{
+                    flex: 1,
+                    mr: { md: 2 },
+                    '& .MuiAutocomplete-inputRoot': { pr: '0 !important' }
+                  }}
                 />
-              )}
-              renderOption={(props, o: any) => {
-                const { key, ...rest } = props;
-                // Ensure a unique key even if props.key has issues
-                const uniqueKey = key || `${o.symbol}-${o.description}`;
-                return (
-                  <li key={uniqueKey} {...rest}>
-                    <Typography sx={{ fontWeight: 800 }}>{o.symbol}</Typography>
-                    <Typography sx={{ ml: 1, opacity: 0.6 }}>{o.description}</Typography>
-                  </li>
-                );
+              </Stack>
+              {/* Desktop Button - Integrated */}
+              <Button
+                variant="contained"
+                onClick={() => fetchStock(symbol)}
+                sx={{
+                  display: { xs: 'none', md: 'flex' },
+                  borderRadius: 10,
+                  px: 4, height: 48,
+                  bgcolor: '#0ea5e9',
+                  fontWeight: 800,
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Analyze Now
+              </Button>
+            </Paper>
+
+            {/* Mobile Button - Separated */}
+            <Button
+              variant="contained"
+              fullWidth
+              size="large"
+              onClick={() => fetchStock(symbol)}
+              sx={{
+                display: { xs: 'flex', md: 'none' },
+                borderRadius: 4,
+                height: 56,
+                bgcolor: '#0ea5e9',
+                fontSize: '1.1rem',
+                fontWeight: 800,
+                boxShadow: '0 8px 20px rgba(14, 165, 233, 0.25)',
+                textTransform: 'none'
               }}
-              sx={{ flex: 1, mr: 3 }}
-            />
+            >
+              Analyze Now
+            </Button>
           </Stack>
-          <Button variant="contained" onClick={() => fetchStock(symbol)} sx={{
-            borderRadius: { xs: 3, md: 10 },
-            px: 4, height: 48,
-            bgcolor: '#0ea5e9',
-            fontWeight: 800,
-            width: { xs: '100%', md: 'auto' }
-          }}>
-            Analyze Now
-          </Button>
-        </Paper>
+        </Box>
       </Box>
 
       {loading ? (
