@@ -152,51 +152,52 @@ export default function MarketPulsePage() {
     const fetchMarketData = async () => {
         setLoading(true);
         try {
-            const symbols = ['SPY', 'QQQ', 'DIA', 'TSLA', 'NVDA', 'AAPL', 'MSFT', 'META', 'AMZN', 'GOOGL', 'BRK.B', 'JNJ', 'JPM', 'V', 'PG'];
+            const res = await fetch('/api/market');
+            const allData = await res.json();
 
-            const results = await Promise.all(symbols.map(async sym => {
-                const res = await fetch(`/api/stock-bundle?symbol=${sym}`);
-                return res.json();
-            }));
+            if (allData.error) throw new Error(allData.error);
 
-            const stockData = results.map((d, i) => ({
-                symbol: symbols[i],
-                name: d.profile?.name || symbols[i],
-                price: d.quote?.c || 0,
-                changePercent: d.quote?.dp || 0
-            }));
+            // 1. Process Main Symbols (Indices & Movers)
+            const mainSymbols = ['SPY', 'QQQ', 'DIA', 'TSLA', 'NVDA', 'AAPL', 'MSFT', 'META', 'AMZN', 'GOOGL', 'BRK.B', 'JNJ', 'JPM', 'V', 'PG'];
+            const stockData = allData
+                .filter((item: any) => mainSymbols.includes(item.symbol))
+                .map((item: any) => ({
+                    symbol: item.symbol,
+                    name: item.symbol, // We'll use symbol as name for speed, or could add a map
+                    price: item.data?.c || 0,
+                    changePercent: item.data?.dp || 0
+                }));
 
-            const indices = stockData.filter(d => ['SPY', 'QQQ', 'DIA'].includes(d.symbol));
-            const avgIndexChange = indices.reduce((acc, curr) => acc + curr.changePercent, 0) / indices.length;
+            const indices = stockData.filter((d: any) => ['SPY', 'QQQ', 'DIA'].includes(d.symbol));
+            const avgIndexChange = indices.length > 0 ? indices.reduce((acc: number, curr: any) => acc + curr.changePercent, 0) / indices.length : 0;
 
             let score = 50 + (avgIndexChange * 15);
             score = Math.max(0, Math.min(100, score));
             setSentimentScore(score);
 
             setMarketStats({
-                spy: stockData.find(d => d.symbol === 'SPY')?.changePercent || 0,
-                qqq: stockData.find(d => d.symbol === 'QQQ')?.changePercent || 0,
-                dia: stockData.find(d => d.symbol === 'DIA')?.changePercent || 0
+                spy: stockData.find((d: any) => d.symbol === 'SPY')?.changePercent || 0,
+                qqq: stockData.find((d: any) => d.symbol === 'QQQ')?.changePercent || 0,
+                dia: stockData.find((d: any) => d.symbol === 'DIA')?.changePercent || 0
             });
 
-            const sortedByPercent = [...stockData].sort((a, b) => b.changePercent - a.changePercent);
+            const sortedByPercent = [...stockData].sort((a: any, b: any) => b.changePercent - a.changePercent);
             setGainers(sortedByPercent.slice(0, 5));
             setLosers([...sortedByPercent].reverse().slice(0, 5));
 
-            // Sector Fetch
+            // 2. Process Sectors
             const sectorSymbols = Object.keys(SECTOR_MAP);
-            const sectorResults = await Promise.all(sectorSymbols.map(async sym => {
-                const res = await fetch(`/api/stock-bundle?symbol=${sym}`);
-                const d = await res.json();
-                return {
-                    symbol: sym,
-                    name: SECTOR_MAP[sym].name,
-                    change: d.quote?.dp || 0,
-                    icon: SECTOR_MAP[sym].icon,
-                    color: SECTOR_MAP[sym].color
-                };
-            }));
-            setSectors(sectorResults.sort((a, b) => b.change - a.change));
+            const sectorResults = allData
+                .filter((item: any) => sectorSymbols.includes(item.symbol))
+                .map((item: any) => ({
+                    symbol: item.symbol,
+                    name: SECTOR_MAP[item.symbol].name,
+                    change: item.data?.dp || 0,
+                    icon: SECTOR_MAP[item.symbol].icon,
+                    color: SECTOR_MAP[item.symbol].color
+                }));
+
+            setSectors(sectorResults.sort((a: any, b: any) => b.change - a.change));
 
         } catch (e) {
             console.error('Failed to fetch market pulse:', e);

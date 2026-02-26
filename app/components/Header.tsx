@@ -10,8 +10,8 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 const NAV_ITEMS = [
     { label: 'วิเคราะห์', href: '/', icon: Cpu, color: '#0ea5e9' },
     { label: 'Market Pulse', href: '/market', icon: Activity, color: '#38bdf8' },
-    { label: 'Portfolio', href: '/portfolio', icon: WalletMoney, color: '#0ea5e9' },
     { label: 'หุ้นแนะนำ', href: '/recommendations', icon: Ranking, color: '#fbbf24' },
+    { label: 'Portfolio', href: '/portfolio', icon: WalletMoney, color: '#0ea5e9' },
     { label: 'ประวัติ', href: '/history', icon: Activity, color: '#38bdf8' },
 ];
 

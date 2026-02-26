@@ -21,7 +21,8 @@ import {
     TablePagination,
     Stack,
     TextField,
-    Autocomplete
+    Autocomplete,
+    Button
 } from '@mui/material';
 import {
     ArrowLeft2,
@@ -31,9 +32,12 @@ import {
     TrendUp,
     TrendDown,
     Activity,
-    SearchNormal1
+    SearchNormal1,
+    WalletMoney
 } from 'iconsax-react';
 import Link from 'next/link';
+import { useSession, signIn } from 'next-auth/react';
+
 
 interface PredictionRecord {
     id: number;
@@ -47,6 +51,7 @@ interface PredictionRecord {
 }
 
 export default function PredictionHistoryPage() {
+    const { data: session, status } = useSession();
     const [history, setHistory] = useState<PredictionRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
@@ -95,8 +100,10 @@ export default function PredictionHistoryPage() {
     };
 
     useEffect(() => {
-        fetchHistory();
-    }, []);
+        if (session) {
+            fetchHistory();
+        }
+    }, [session]);
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('th-TH', {
@@ -107,6 +114,33 @@ export default function PredictionHistoryPage() {
             minute: '2-digit'
         });
     };
+
+    if (status === 'loading') {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', py: 20 }}><CircularProgress /><Typography sx={{ mt: 2, ml: 2 }}>กำลังตรวจสอบสิทธิ์...</Typography></Box>;
+    }
+
+    if (!session) {
+        return (
+            <Container maxWidth="sm" sx={{ py: 20 }}>
+                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 6, bgcolor: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <Box sx={{ mb: 4, p: 2, bgcolor: 'rgba(14, 165, 233, 0.1)', borderRadius: '50%', width: 80, height: 80, mx: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Activity size="40" color="#0ea5e9" variant="Bulk" />
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 900, mb: 2, color: 'white' }}>เข้าสู่ระบบเพื่อดูประวัติการวิเคราะห์</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>คุณจำเป็นต้องเข้าสู่ระบบเพื่อเข้าถึงข้อมูลบันทึกการวิเคราะห์หุ้นรายบุคคลของคุณ</Typography>
+                    <Button
+                        variant="contained"
+                        fullWidth
+                        size="large"
+                        onClick={() => signIn('google')}
+                        sx={{ borderRadius: 3, py: 1.5, fontWeight: 800, bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' } }}
+                    >
+                        เข้าสู่ระบบด้วย Google
+                    </Button>
+                </Paper>
+            </Container>
+        );
+    }
 
     return (
         <Container maxWidth="lg" sx={{ py: 6 }}>
