@@ -37,6 +37,7 @@ import {
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 const StockChart = dynamic(() => import('./components/StockChart'), {
   ssr: false,
@@ -63,6 +64,7 @@ interface StockData {
 const FINNHUB_KEY = process.env.NEXT_PUBLIC_FINNHUB_KEY;
 
 function HomeContent() {
+  const { data: session } = useSession();
   const [symbol, setSymbol] = useState('');
   const searchParams = useSearchParams();
   const querySymbol = searchParams.get('symbol');
@@ -297,7 +299,15 @@ function HomeContent() {
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       const data = await res.json();
-      if (Array.isArray(data)) setOptions(data);
+      if (Array.isArray(data)) {
+        // Filter out duplicate symbols
+        const uniqueOptions = data.reduce((acc: any[], current: any) => {
+          const x = acc.find(item => item.symbol === current.symbol);
+          if (!x) return acc.concat([current]);
+          else return acc;
+        }, []);
+        setOptions(uniqueOptions);
+      }
     } catch (e) { }
   };
 
@@ -310,81 +320,85 @@ function HomeContent() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
-
-
+      {/* Hidden H1 for SEO */}
+      <Typography component="h1" sx={{ display: 'none' }}>
+        TradingChill - วิเคราะห์หุ้นด้วยระบบ AI และเทคนิคอลอัจฉริยะ
+      </Typography>
       {/* Watchlist Quick Links & Sync */}
-      <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Stack direction="row" spacing={2} justifyContent="center" alignItems="center" sx={{ mb: 1.5 }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>
-            รายการโปรดของคุณ
-          </Typography>
-          {userSymbols.length > 0 && (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={syncAllStocks}
-                disabled={scanning}
-                startIcon={scanning ? <CircularProgress size={14} /> : <Refresh2 size="14" variant='Bold' color="#38bdf8" />}
-                sx={{
-                  borderRadius: 10,
-                  fontSize: '0.65rem',
-                  py: 0.2,
-                  borderColor: 'rgba(56, 189, 248, 0.3)',
-                  color: '#38bdf8',
-                  '&:hover': { borderColor: '#38bdf8', bgcolor: 'rgba(56, 189, 248, 0.05)' }
-                }}
-              >
-                {scanning ? `Syncing ${scanProgress.current}/${scanProgress.total}` : 'Sync ทั้งหมด'}
-              </Button>
-              {(typeof window !== 'undefined' && localStorage.getItem('lastGlobalSync')) && (
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem' }}>
-                  อัปเดตล่าสุด: {new Date(localStorage.getItem('lastGlobalSync')!).toLocaleTimeString('th-TH')}
-                </Typography>
-              )}
-            </Stack>
-          )}
-        </Stack>
+      {session && (
+        <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Stack direction="row" spacing={2} justifyContent="center" alignItems="center" sx={{ mb: 1.5 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+              รายการโปรดของคุณ
+            </Typography>
+            {userSymbols.length > 0 && (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={syncAllStocks}
+                  disabled={scanning}
+                  startIcon={scanning ? <CircularProgress size={14} /> : <Refresh2 size="14" variant='Bold' color="#38bdf8" />}
+                  sx={{
+                    borderRadius: 10,
+                    fontSize: '0.65rem',
+                    py: 0.2,
+                    borderColor: 'rgba(56, 189, 248, 0.3)',
+                    color: '#38bdf8',
+                    '&:hover': { borderColor: '#38bdf8', bgcolor: 'rgba(56, 189, 248, 0.05)' }
+                  }}
+                >
+                  {scanning ? `Syncing ${scanProgress.current}/${scanProgress.total}` : 'Sync ทั้งหมด'}
+                </Button>
+                {(typeof window !== 'undefined' && localStorage.getItem('lastGlobalSync')) && (
+                  <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem' }}>
+                    อัปเดตล่าสุด: {new Date(localStorage.getItem('lastGlobalSync')!).toLocaleTimeString('th-TH')}
+                  </Typography>
+                )}
+              </Stack>
+            )}
+          </Stack>
 
-        {scanning && (
-          <Box sx={{ maxWidth: 300, mx: 'auto', mb: 2 }}>
-            <LinearProgress
-              variant="determinate"
-              value={(scanProgress.current / scanProgress.total) * 100}
-              sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.05)' }}
-            />
-          </Box>
-        )}
-
-        <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" useFlexGap sx={{ gap: 1 }}>
-          {watchlistLoading ? (
-            Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} variant="rounded" width={80} height={32} sx={{ borderRadius: 2 }} />)
-          ) : userSymbols.length > 0 ? (
-            userSymbols.map((s) => (
-              <Button
-                key={s}
-                variant={symbol === s ? 'contained' : 'outlined'}
-                size="small"
-                onClick={() => { setSymbol(s); fetchStock(s); }}
-                sx={{
-                  borderRadius: 2,
-                  px: 2,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  bgcolor: symbol === s ? '#0ea5e9' : 'transparent',
-                  borderColor: symbol === s ? '#0ea5e9' : 'rgba(255,255,255,0.1)',
-                  color: symbol === s ? 'white' : 'text.secondary',
-                  '&:hover': { bgcolor: symbol === s ? '#0284c7' : 'rgba(14,165,233,0.05)', borderColor: '#0ea5e9' }
-                }}
-              >
-                {s}
-              </Button>
-            ))
-          ) : (
-            <Typography variant="caption" color="text.secondary">ยังไม่มีรายการโปรด</Typography>
+          {scanning && (
+            <Box sx={{ maxWidth: 300, mx: 'auto', mb: 2 }}>
+              <LinearProgress
+                variant="determinate"
+                value={(scanProgress.current / scanProgress.total) * 100}
+                sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.05)' }}
+              />
+            </Box>
           )}
-        </Stack>
-      </Box>
+
+          <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" useFlexGap sx={{ gap: 1 }}>
+            {watchlistLoading ? (
+              Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} variant="rounded" width={80} height={32} sx={{ borderRadius: 2 }} />)
+            ) : userSymbols.length > 0 ? (
+              userSymbols.map((s) => (
+                <Button
+                  key={s}
+                  variant={symbol === s ? 'contained' : 'outlined'}
+                  size="small"
+                  onClick={() => { setSymbol(s); fetchStock(s); }}
+                  sx={{
+                    borderRadius: 2,
+                    px: 2,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    bgcolor: symbol === s ? '#0ea5e9' : 'transparent',
+                    borderColor: symbol === s ? '#0ea5e9' : 'rgba(255,255,255,0.1)',
+                    color: symbol === s ? 'white' : 'text.secondary',
+                    '&:hover': { bgcolor: symbol === s ? '#0284c7' : 'rgba(14,165,233,0.05)', borderColor: '#0ea5e9' }
+                  }}
+                >
+                  {s}
+                </Button>
+              ))
+            ) : (
+              <Typography variant="caption" color="text.secondary">ยังไม่มีรายการโปรด</Typography>
+            )}
+          </Stack>
+        </Box>
+      )}
 
       {/* Search Bar */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: { xs: 6, md: 8 } }}>
@@ -408,14 +422,47 @@ function HomeContent() {
               freeSolo
               options={options}
               getOptionLabel={(o) => typeof o === 'string' ? o : o.symbol}
-              onInputChange={(e, v) => { setSymbol(v); searchSymbols(v); }}
-              onChange={(e, v: any) => { if (v) { const s = typeof v === 'string' ? v : v.symbol; setSymbol(s); fetchStock(s); } }}
-              renderInput={(params) => <TextField {...params} variant="standard" placeholder="ค้นหารหัสหุ้น (e.g. TSLA, NVDA)" InputProps={{ ...params.InputProps, disableUnderline: true, sx: { ml: 2, color: 'white', fontSize: { xs: '1rem', md: '1.1rem' } } }} />}
+              onInputChange={(e, v) => {
+                const upper = v.toUpperCase();
+                setSymbol(upper);
+                searchSymbols(upper);
+              }}
+              onChange={(e, v: any) => {
+                if (v) {
+                  const s = (typeof v === 'string' ? v : v.symbol).toUpperCase();
+                  setSymbol(s);
+                  fetchStock(s);
+                }
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  variant="standard"
+                  placeholder="ค้นหารหัสหุ้น (e.g. TSLA, NVDA)"
+                  InputProps={{
+                    ...params.InputProps,
+                    disableUnderline: true,
+                    sx: {
+                      ml: 2,
+                      color: 'white',
+                      fontSize: { xs: '1rem', md: '1.1rem' },
+                      '& input': { textTransform: 'uppercase' } // Visual uppercase while typing
+                    }
+                  }}
+                />
+              )}
               renderOption={(props, o: any) => {
                 const { key, ...rest } = props;
-                return <li key={key} {...rest}><Typography sx={{ fontWeight: 800 }}>{o.symbol}</Typography> <Typography sx={{ ml: 1, opacity: 0.6 }}>{o.description}</Typography></li>;
+                // Ensure a unique key even if props.key has issues
+                const uniqueKey = key || `${o.symbol}-${o.description}`;
+                return (
+                  <li key={uniqueKey} {...rest}>
+                    <Typography sx={{ fontWeight: 800 }}>{o.symbol}</Typography>
+                    <Typography sx={{ ml: 1, opacity: 0.6 }}>{o.description}</Typography>
+                  </li>
+                );
               }}
-              sx={{ flex: 1, ml: 1 }}
+              sx={{ flex: 1, mr: 3 }}
             />
           </Stack>
           <Button variant="contained" onClick={() => fetchStock(symbol)} sx={{

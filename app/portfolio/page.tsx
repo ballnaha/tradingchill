@@ -20,6 +20,7 @@ import {
     Snackbar,
     Alert
 } from '@mui/material';
+import { useSession, signIn } from 'next-auth/react';
 import {
     Add,
     Trash,
@@ -76,10 +77,14 @@ export default function PortfolioPage() {
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
     const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean, item?: PortfolioItem }>({ open: false });
 
+    const { data: session, status } = useSession();
+
     useEffect(() => {
-        fetchPortfolio();
-        fetchExchangeRate();
-    }, []);
+        if (session) {
+            fetchPortfolio();
+            fetchExchangeRate();
+        }
+    }, [session]);
 
     const fetchExchangeRate = async () => {
         try {
@@ -246,6 +251,33 @@ export default function PortfolioPage() {
             value
         })).sort((a, b) => b.value - a.value);
     }, [portfolio]);
+
+    if (status === 'loading') {
+        return <Box sx={{ textAlign: 'center', py: 20 }}><CircularProgress /><Typography sx={{ mt: 2, color: 'text.secondary' }}>กำลังตรวจสอบสิทธิ์...</Typography></Box>;
+    }
+
+    if (!session) {
+        return (
+            <Container maxWidth="sm" sx={{ py: 20 }}>
+                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 6, bgcolor: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <Box sx={{ mb: 4, p: 2, bgcolor: 'rgba(14, 165, 233, 0.1)', borderRadius: '50%', width: 80, height: 80, mx: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <WalletMoney size="40" color="#0ea5e9" variant="Bulk" />
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 900, mb: 2, color: 'white' }}>เข้าสู่ระบบเพื่อใช้งานพอร์ตจำลอง</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>คุณจำเป็นต้องเข้าสู่ระบบเพื่อบันทึกและติดตามข้อมูลพอร์ตหุ้นของคุณส่วนตัว</Typography>
+                    <Button
+                        variant="contained"
+                        fullWidth
+                        size="large"
+                        onClick={() => signIn('google')}
+                        sx={{ borderRadius: 3, py: 1.5, fontWeight: 800, bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' } }}
+                    >
+                        เข้าสู่ระบบด้วย Google
+                    </Button>
+                </Paper>
+            </Container>
+        );
+    }
 
     if (loading) {
         return <Box sx={{ textAlign: 'center', py: 20 }}><CircularProgress /><Typography sx={{ mt: 2, color: 'text.secondary' }}>กำลังรวบรวมทรัพย์สินของคุณ...</Typography></Box>;
