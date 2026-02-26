@@ -10,7 +10,7 @@ export async function GET() {
             return NextResponse.json([]);
         }
 
-        const watchlist = await (prisma as any).watchlist.findMany({
+        const watchlist = await prisma.watchlist.findMany({
             where: { userId: (session.user as any).id },
             orderBy: { createdAt: 'desc' }
         });
@@ -29,24 +29,30 @@ export async function POST(request: Request) {
         }
 
         const userId = (session.user as any).id;
-        const { symbol, name } = await request.json();
+        const body = await request.json() as { symbol: string; name?: string };
+        const { symbol, name } = body;
 
         if (!symbol) {
             return NextResponse.json({ error: 'Symbol is required' }, { status: 400 });
         }
 
-        const item = await (prisma as any).watchlist.upsert({
+        const item = await prisma.watchlist.upsert({
             where: {
                 symbol_userId: {
                     symbol: symbol.toUpperCase(),
                     userId: userId
                 }
             },
-            update: { name },
+            update: {
+                name,
+                updatedAt: new Date()
+            },
             create: {
                 symbol: symbol.toUpperCase(),
                 name,
-                userId: userId
+                userId: userId,
+                createdAt: new Date(),
+                updatedAt: new Date()
             }
         });
 
@@ -72,7 +78,7 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: 'Symbol is required' }, { status: 400 });
         }
 
-        await (prisma as any).watchlist.delete({
+        await prisma.watchlist.delete({
             where: {
                 symbol_userId: {
                     symbol: symbol.toUpperCase(),

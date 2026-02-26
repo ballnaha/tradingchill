@@ -9,7 +9,11 @@ export async function GET(request: Request) {
         const symbol = searchParams.get('symbol');
 
         const session = await getServerSession(authOptions);
-        const userId = session?.user ? (session.user as any).id : null;
+        if (!session || !session.user) {
+            return NextResponse.json([]);
+        }
+
+        const userId = (session.user as any).id;
 
         const history = await prisma.predictionHistory.findMany({
             where: {
@@ -29,7 +33,31 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const userId = (session.user as any).id;
+        const body = await request.json() as {
+            symbol: string;
+            trend: string;
+            confidence: any;
+            targetPrice?: any;
+            target?: any;
+            reasoning?: string;
+            price?: any;
+            change?: number;
+            changePercent?: number;
+            rsi?: number;
+            sma20?: number;
+            sma50?: number;
+            sma200?: number;
+            lowerBB?: number;
+            upperBB?: number;
+            pe?: number;
+        };
+
         const {
             symbol,
             trend,
@@ -45,9 +73,6 @@ export async function POST(request: Request) {
         if (!symbol || !trend || !finalTarget) {
             return NextResponse.json({ error: 'Missing required fields: symbol, trend or target' }, { status: 400 });
         }
-
-        const session = await getServerSession(authOptions);
-        const userId = session?.user ? (session.user as any).id : null;
 
         // Upsert prediction — only 1 record per symbol per day per user
         const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD

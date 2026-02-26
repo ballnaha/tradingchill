@@ -7,8 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model account {
-  id                String  @id
+model Account {
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -20,13 +20,14 @@ model account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-  user              user    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Account_userId_fkey")
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Account_userId_fkey")
 
   @@unique([provider, providerAccountId], map: "Account_provider_providerAccountId_key")
   @@index([userId], map: "Account_userId_fkey")
+  @@map("account")
 }
 
-model portfolio {
+model Portfolio {
   id       Int      @id @default(autoincrement())
   symbol   String
   name     String?
@@ -34,13 +35,14 @@ model portfolio {
   buyPrice Float
   buyDate  DateTime @default(now())
   userId   String?
-  user     user?    @relation(fields: [userId], references: [id], map: "Portfolio_userId_fkey")
+  user     User?    @relation(fields: [userId], references: [id], map: "Portfolio_userId_fkey")
 
   @@index([symbol], map: "Portfolio_symbol_idx")
   @@index([userId], map: "Portfolio_userId_fkey")
+  @@map("portfolio")
 }
 
-model predictionhistory {
+model PredictionHistory {
   id          Int      @id @default(autoincrement())
   symbol      String
   date        DateTime @default(now())
@@ -51,24 +53,26 @@ model predictionhistory {
   reasoning   String?  @db.Text
   dateKey     String
   userId      String?
-  user        user?    @relation(fields: [userId], references: [id], map: "PredictionHistory_userId_fkey")
+  user        User?    @relation(fields: [userId], references: [id], map: "PredictionHistory_userId_fkey")
 
   @@unique([symbol, dateKey, userId], map: "PredictionHistory_symbol_dateKey_userId_key")
   @@index([symbol, date], map: "PredictionHistory_symbol_date_idx")
   @@index([userId], map: "PredictionHistory_userId_fkey")
+  @@map("predictionhistory")
 }
 
-model session {
-  id           String   @id
+model Session {
+  id           String   @id @default(cuid())
   sessionToken String   @unique(map: "Session_sessionToken_key")
   userId       String
   expires      DateTime
-  user         user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Session_userId_fkey")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Session_userId_fkey")
 
   @@index([userId], map: "Session_userId_fkey")
+  @@map("session")
 }
 
-model stockdata {
+model StockData {
   id                   Int      @id @default(autoincrement())
   symbol               String   @unique(map: "StockData_symbol_key")
   date                 DateTime @default(now())
@@ -86,38 +90,42 @@ model stockdata {
   predictionConfidence Float?
   predictionTarget     Float?
   predictionReasoning  String?  @db.Text
+  @@map("stockdata")
 }
 
-model user {
-  id                String              @id
+model User {
+  id                String              @id @default(cuid())
   name              String?
   email             String?             @unique(map: "User_email_key")
   emailVerified     DateTime?
   image             String?
-  account           account[]
-  portfolio         portfolio[]
-  predictionhistory predictionhistory[]
-  session           session[]
-  watchlist         watchlist[]
+  account           Account[]
+  portfolio         Portfolio[]
+  predictionhistory PredictionHistory[]
+  session           Session[]
+  watchlist         Watchlist[]
+  @@map("user")
 }
 
-model verificationtoken {
+model VerificationToken {
   identifier String
   token      String   @unique(map: "VerificationToken_token_key")
   expires    DateTime
 
   @@unique([identifier, token], map: "VerificationToken_identifier_token_key")
+  @@map("verificationtoken")
 }
 
-model watchlist {
+model Watchlist {
   id        Int      @id @default(autoincrement())
   symbol    String
   name      String?
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @default(now()) @updatedAt
   userId    String?
-  user      user?    @relation(fields: [userId], references: [id], map: "Watchlist_userId_fkey")
+  user      User?    @relation(fields: [userId], references: [id], map: "Watchlist_userId_fkey")
 
   @@unique([symbol, userId], map: "Watchlist_symbol_userId_key")
   @@index([userId], map: "Watchlist_userId_fkey")
+  @@map("watchlist")
 }

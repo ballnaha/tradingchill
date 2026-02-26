@@ -10,7 +10,7 @@ export async function GET() {
             return NextResponse.json([]);
         }
 
-        const portfolio = await (prisma as any).portfolio.findMany({
+        const portfolio = await prisma.portfolio.findMany({
             where: { userId: (session.user as any).id },
             orderBy: { buyDate: 'desc' }
         });
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
         }
 
         const { symbol, name, shares, buyPrice } = await req.json();
-        const newItem = await (prisma as any).portfolio.create({
+        const newItem = await prisma.portfolio.create({
             data: {
                 symbol,
                 name,
@@ -52,7 +52,7 @@ export async function DELETE(req: Request) {
         }
 
         const { id } = await req.json();
-        await (prisma as any).portfolio.delete({
+        await prisma.portfolio.delete({
             where: {
                 id: parseInt(id),
                 userId: (session.user as any).id
