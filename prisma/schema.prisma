@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model account {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              user    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Account_userId_fkey")
+
+  @@unique([provider, providerAccountId], map: "Account_provider_providerAccountId_key")
+  @@index([userId], map: "Account_userId_fkey")
+}
+
+model portfolio {
+  id       Int      @id @default(autoincrement())
+  symbol   String
+  name     String?
+  shares   Float    @default(0)
+  buyPrice Float
+  buyDate  DateTime @default(now())
+  userId   String?
+  user     user?    @relation(fields: [userId], references: [id], map: "Portfolio_userId_fkey")
+
+  @@index([symbol], map: "Portfolio_symbol_idx")
+  @@index([userId], map: "Portfolio_userId_fkey")
+}
+
+model predictionhistory {
+  id          Int      @id @default(autoincrement())
+  symbol      String
+  date        DateTime @default(now())
+  trend       String
+  confidence  Float
+  targetPrice Float
+  actualPrice Float?
+  reasoning   String?  @db.Text
+  dateKey     String
+  userId      String?
+  user        user?    @relation(fields: [userId], references: [id], map: "PredictionHistory_userId_fkey")
+
+  @@unique([symbol, dateKey, userId], map: "PredictionHistory_symbol_dateKey_userId_key")
+  @@index([symbol, date], map: "PredictionHistory_symbol_date_idx")
+  @@index([userId], map: "PredictionHistory_userId_fkey")
+}
+
+model session {
+  id           String   @id
+  sessionToken String   @unique(map: "Session_sessionToken_key")
+  userId       String
+  expires      DateTime
+  user         user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Session_userId_fkey")
+
+  @@index([userId], map: "Session_userId_fkey")
+}
+
+model stockdata {
+  id                   Int      @id @default(autoincrement())
+  symbol               String   @unique(map: "StockData_symbol_key")
+  date                 DateTime @default(now())
+  price                Float
+  change               Float
+  changePercent        Float
+  rsi                  Float?
+  sma20                Float?
+  sma50                Float?
+  sma200               Float?
+  lowerBB              Float?
+  upperBB              Float?
+  pe                   Float?
+  predictionTrend      String?
+  predictionConfidence Float?
+  predictionTarget     Float?
+  predictionReasoning  String?  @db.Text
+}
+
+model user {
+  id                String              @id
+  name              String?
+  email             String?             @unique(map: "User_email_key")
+  emailVerified     DateTime?
+  image             String?
+  account           account[]
+  portfolio         portfolio[]
+  predictionhistory predictionhistory[]
+  session           session[]
+  watchlist         watchlist[]
+}
+
+model verificationtoken {
+  identifier String
+  token      String   @unique(map: "VerificationToken_token_key")
+  expires    DateTime
+
+  @@unique([identifier, token], map: "VerificationToken_identifier_token_key")
+}
+
+model watchlist {
+  id        Int      @id @default(autoincrement())
+  symbol    String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  userId    String?
+  user      user?    @relation(fields: [userId], references: [id], map: "Watchlist_userId_fkey")
+
+  @@unique([symbol, userId], map: "Watchlist_symbol_userId_key")
+  @@index([userId], map: "Watchlist_userId_fkey")
+}
