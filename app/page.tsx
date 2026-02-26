@@ -203,14 +203,22 @@ function HomeContent() {
         });
       }
 
-      await fetch('/api/predictions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newPick, targetPrice: newPick.target })
-      });
+      if (session) {
+        await fetch('/api/predictions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...newPick, targetPrice: newPick.target })
+        });
+      }
 
     } catch (err: any) {
-      if (!silent) setError(err.message || 'Failed to analyze stock');
+      if (!silent) {
+        setError(err.message || 'Failed to analyze stock');
+        // If symbol not found or limit reached, fallback to NVDA
+        if (sym !== 'NVDA') {
+          setTimeout(() => fetchStock('NVDA'), 1500);
+        }
+      }
     } finally {
       if (!silent) setLoading(false);
     }
