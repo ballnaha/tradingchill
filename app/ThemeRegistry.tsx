@@ -24,7 +24,7 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Plus Jakarta Sans", "IBM Plex Sans Thai", "Inter", sans-serif',
+    fontFamily: '"Plus Jakarta Sans", "Sarabun", "Inter", sans-serif',
     fontSize: 14,
     h1: { fontWeight: 800, fontSize: '2.25rem' },
     h2: { fontWeight: 800, fontSize: '1.875rem' },

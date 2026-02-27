@@ -558,7 +558,7 @@ function HomeContent() {
                   {[
                     { label: 'Yesterday (Close)', value: `$${quote.previousClose.toLocaleString()}` },
                     { label: 'Today (Open)', value: `$${quote.open.toLocaleString()}` },
-                    { label: 'Forecast Target', value: `$${parseFloat(prediction?.target || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+                    { label: 'Statistical Est.', value: `$${parseFloat(prediction?.target || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
                     { label: '52W High', value: `$${(quote.yearHigh || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
                     { label: '52W Low', value: `$${(quote.yearLow || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
                     { label: 'Volume', value: (quote.volume || 0).toLocaleString() },

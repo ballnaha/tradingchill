@@ -28,7 +28,7 @@ const AIPredictionCard: React.FC<AIPredictionCardProps> = ({ prediction }) => {
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3, justifyContent: 'space-between' }}>
                 <Stack direction="row" spacing={1} alignItems="center">
                     <LampCharge size="24" color="#fbbf24" variant="Bulk" />
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>FORECAST</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>STATISTICAL ANALYSIS</Typography>
                 </Stack>
                 {prediction && (
                     <Box sx={{ display: { xs: 'block', md: 'none' }, textAlign: 'right' }}>
@@ -44,7 +44,7 @@ const AIPredictionCard: React.FC<AIPredictionCardProps> = ({ prediction }) => {
 
             <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', p: 3, borderRadius: 3, mb: 3 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    แนวโน้มพยากรณ์ (3 วันข้างหน้า)
+                    ผลวิเคราะห์ทางสถิติ (3 วันข้างหน้า)
                 </Typography>
                 {prediction && (
                     <>
@@ -75,7 +75,7 @@ const AIPredictionCard: React.FC<AIPredictionCardProps> = ({ prediction }) => {
 
                         <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(56, 189, 248, 0.05)', borderRadius: 2, borderLeft: '4px solid #38bdf8' }}>
                             <Typography variant="caption" sx={{ color: '#38bdf8', fontWeight: 800, display: 'block', mb: 0.5 }}>
-                                ช่วงเวลาคาดการณ์: {prediction.period} (3 วันทำการ)
+                                ช่วงเวลาที่คำนวณ: {prediction.period} (3 วันทำการ)
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.6 }}>
                                 {prediction.reasoning}
@@ -85,7 +85,7 @@ const AIPredictionCard: React.FC<AIPredictionCardProps> = ({ prediction }) => {
                         <Stack spacing={1} sx={{ mt: 2 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="body2" color="text.secondary">
-                                    ราคาคาดการณ์ (พรุ่งนี้):
+                                    ค่าประมาณทางสถิติ (วันถัดไป):
                                 </Typography>
                                 <Typography className="font-mono" sx={{ fontWeight: 700, color: 'primary.main', fontSize: '1.1rem' }}>
                                     ${typeof prediction.targetNextDay === 'string' ? parseFloat(prediction.targetNextDay).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : prediction.targetNextDay}
@@ -93,7 +93,7 @@ const AIPredictionCard: React.FC<AIPredictionCardProps> = ({ prediction }) => {
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="body2" color="text.secondary">
-                                    เป้าหมาย {prediction.days} วัน:
+                                    ค่าคำนวณ {prediction.days} วัน:
                                 </Typography>
                                 <Typography className="font-mono" sx={{ fontWeight: 800, color: '#38bdf8', fontSize: '1.2rem' }}>
                                     ${typeof prediction.target === 'string' ? parseFloat(prediction.target).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : prediction.target}

@@ -10,7 +10,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 const PUBLIC_NAV = [
     { label: 'วิเคราะห์', href: '/', icon: Cpu, color: '#0ea5e9' },
     { label: 'Market Pulse', href: '/market', icon: Activity, color: '#38bdf8' },
-    { label: 'หุ้นแนะนำ', href: '/recommendations', icon: Ranking, color: '#fbbf24' },
+    { label: 'สแกนหุ้น', href: '/recommendations', icon: Ranking, color: '#fbbf24' },
 ];
 
 const AUTH_NAV = [
@@ -273,7 +273,7 @@ export default function Header() {
                                                             <Setting2 size="18" color={pathname === '/admin' ? '#0ea5e9' : '#94a3b8'} variant={pathname === '/admin' ? 'Bold' : 'Outline'} />
                                                         </ListItemIcon>
                                                         <Typography variant="body2" sx={{ fontWeight: pathname === '/admin' ? 700 : 500, color: pathname === '/admin' ? 'white' : 'text.secondary', fontSize: '0.85rem' }}>
-                                                            จัดการหุ้นแนะนำ
+                                                            จัดการหุ้นในระบบ
                                                         </Typography>
                                                     </MenuItem>
                                                 </Link>,
@@ -413,7 +413,7 @@ export default function Header() {
                             <Typography variant="caption" sx={{ color: '#0ea5e9', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: 1, pl: 2, mb: 1, mt: 1, display: 'block' }}>
                                 ผู้ดูแลระบบ
                             </Typography>
-                            {renderNavListItem({ label: 'จัดการหุ้นแนะนำ', href: '/admin', icon: Setting2, color: '#0ea5e9' }, pathname, () => setMobileOpen(false))}
+                            {renderNavListItem({ label: 'จัดการหุ้นในระบบ', href: '/admin', icon: Setting2, color: '#0ea5e9' }, pathname, () => setMobileOpen(false))}
                             {renderNavListItem({ label: 'จัดการสมาชิก', href: '/admin/users', icon: People, color: '#0ea5e9' }, pathname, () => setMobileOpen(false))}
                         </List>
                     )}

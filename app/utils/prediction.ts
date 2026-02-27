@@ -356,10 +356,10 @@ export const getPrediction = (q: StockQuote): PredictionResult => {
             const sellPct = (q.analystSell / total) * 100;
             if (buyPct >= 65) {
                 score += 1.5; details.push(`Wall Street consensus: Buy ${q.analystBuy}/${total}`);
-                reasoningPoints.push({ label: 'Analyst Consensus', value: `Buy ${q.analystBuy} / Hold ${q.analystHold} / Sell ${q.analystSell} → ${buyPct.toFixed(0)}% นักวิเคราะห์แนะนำซื้อ`, signal: 'positive' });
+                reasoningPoints.push({ label: 'Analyst Consensus', value: `Buy ${q.analystBuy} / Hold ${q.analystHold} / Sell ${q.analystSell} → ${buyPct.toFixed(0)}% นักวิเคราะห์ให้คะแนน Buy`, signal: 'positive' });
             } else if (sellPct >= 40) {
                 score -= 1.5;
-                reasoningPoints.push({ label: 'Analyst Consensus', value: `Buy ${q.analystBuy} / Hold ${q.analystHold} / Sell ${q.analystSell} → ${sellPct.toFixed(0)}% แนะนำขาย`, signal: 'negative' });
+                reasoningPoints.push({ label: 'Analyst Consensus', value: `Buy ${q.analystBuy} / Hold ${q.analystHold} / Sell ${q.analystSell} → ${sellPct.toFixed(0)}% ให้คะแนน Sell`, signal: 'negative' });
             } else {
                 reasoningPoints.push({ label: 'Analyst Consensus', value: `Buy ${q.analystBuy} / Hold ${q.analystHold} / Sell ${q.analystSell} → Mixed consensus`, signal: 'neutral' });
             }

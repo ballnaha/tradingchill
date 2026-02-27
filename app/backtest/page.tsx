@@ -489,7 +489,7 @@ export default function BacktestPage() {
                             <Stack direction="row" spacing={1} alignItems="flex-start">
                                 <InfoCircle size="14" color="#0ea5e9" />
                                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                                    <strong style={{ color: '#0ea5e9' }}>แนะนำ:</strong> ควรซื้อขายเมื่อ Confidence ≥75% เท่านั้น เพราะความแม่นยำสูงกว่ามาก
+                                    <strong style={{ color: '#0ea5e9' }}>หมายเหตุ:</strong> สถิติชี้ว่าเมื่อ Confidence ≥75% ความแม่นยำจะสูงกว่ามาก
                                 </Typography>
                             </Stack>
                         </Box>

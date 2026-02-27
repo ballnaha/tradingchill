@@ -109,7 +109,7 @@ export default function AdminPage() {
     };
 
     const handleDeleteStock = async (symbol: string) => {
-        if (!confirm(`คุณแน่ใจว่าต้องการลบ ${symbol} ออกจากรายการแนะนำ?`)) return;
+        if (!confirm(`คุณแน่ใจว่าต้องการลบ ${symbol} ออกจากระบบ?`)) return;
         try {
             const res = await fetch(`/api/admin/stocks?symbol=${symbol}`, { method: 'DELETE' });
             if (res.ok) {

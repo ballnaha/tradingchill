@@ -171,7 +171,7 @@ const StockItem = ({ stock }: { stock: RecommendedStock }) => (
         >
             <Stack direction="row" spacing={2}>
                 <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>Target (1D)</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>Est. (1D)</Typography>
                     <Typography variant="body2" className="font-mono" sx={{ fontWeight: 800, color: '#38bdf8' }}>
                         ${stock.predictionTarget?.toFixed(2)}
                     </Typography>
@@ -307,10 +307,10 @@ export default function RecommendationsPage() {
                     >
                         <Box>
                             <Typography variant="h3" sx={{ fontWeight: 900, mb: 1, color: 'white' }}>
-                                Quantitative <span style={{ color: '#0284c7' }}>Top Picks</span>
+                                Quantitative <span style={{ color: '#0284c7' }}>Stock Scanner</span>
                             </Typography>
                             <Typography variant="body1" color="text.secondary" sx={{ mb: 1.5 }}>
-                                รวมสุดยอดหุ้นที่มีสัญญาณทางเทคนิคแม่นยำที่สุดจากระบบ Quantitative ล่าสุด
+                                รวมหุ้นที่มีสัญญาณทางเทคนิคโดดเด่นจากระบบ Quantitative — ข้อมูลเพื่อประกอบการตัดสินใจเท่านั้น
                             </Typography>
                             <Stack direction="row" spacing={1} alignItems="center">
                                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#4ade80', animation: 'pulse 2s infinite' }} />
@@ -457,7 +457,7 @@ export default function RecommendationsPage() {
                                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
                                     <TrendUp size="24" color="#4ade80" variant="Bold" />
                                     <Typography variant="h5" sx={{ fontWeight: 800, color: 'white' }}>
-                                        หุ้นแนะนำฝั่งขาขึ้น (Bullish)
+                                        สัญญาณ Bullish จากระบบ
                                         <Typography component="span" variant="caption" sx={{ ml: 1.5, color: '#4ade80', fontWeight: 700, bgcolor: 'rgba(74, 222, 128, 0.1)', px: 1, py: 0.3, borderRadius: 1.5 }}>
                                             {groupedStocks.bull.length} รายการ
                                         </Typography>
@@ -481,7 +481,7 @@ export default function RecommendationsPage() {
                                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
                                     <TrendDown size="24" color="#ef4444" variant="Bold" />
                                     <Typography variant="h5" sx={{ fontWeight: 800, color: 'white' }}>
-                                        หุ้นแนะนำฝั่งขาลง (Bearish)
+                                        สัญญาณ Bearish จากระบบ
                                         <Typography component="span" variant="caption" sx={{ ml: 1.5, color: '#ef4444', fontWeight: 700, bgcolor: 'rgba(239, 68, 68, 0.1)', px: 1, py: 0.3, borderRadius: 1.5 }}>
                                             {groupedStocks.bear.length} รายการ
                                         </Typography>

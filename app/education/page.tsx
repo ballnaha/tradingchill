@@ -12,7 +12,7 @@ export default function Education() {
             <Box sx={{ mb: 4 }}>
                 <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>คู่มือการใช้งานและการวิเคราะห์</Typography>
                 <Typography variant="body1" color="text.secondary">
-                    ทำความเข้าใจเครื่องมือหลักที่ระบบอัลกอริทึมใช้ในการคำนวณและพยากรณ์ราคาหุ้น
+                    ทำความเข้าใจเครื่องมือหลักที่ระบบอัลกอริทึมใช้ในการคำนวณและวิเคราะห์ข้อมูลหุ้น
                 </Typography>
             </Box>
 
@@ -29,7 +29,7 @@ export default function Education() {
                         <strong>Relative Strength Index (RSI)</strong> คือเครื่องมือวัด "โมเมนตัม" หรือความแรงของราคาในช่วง 14 วันล่าสุด เพื่อระบุสภาวะที่มีการซื้อหรือขายมากเกินไป
                     </Typography>
                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', p: 3, borderRadius: 3 }}>
-                        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>Logic การพยากรณ์:</Typography>
+                        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>Logic การคำนวณ:</Typography>
                         <ul style={{ paddingLeft: '20px', color: '#94a3b8' }}>
                             <li style={{ marginBottom: '8px' }}>
                                 <span style={{ color: '#22c55e' }}>Oversold (ต่ำกว่า 30):</span> ราคาลงมาลึกเกินไป คนเทขายจนหมดแรง มีโอกาสสูงที่ราคาจะ <strong>ดีดกลับ (Rebound)</strong> ในระยะสั้น
@@ -56,7 +56,7 @@ export default function Education() {
                         <strong>Simple Moving Average (SMA)</strong> คือราคาเฉลี่ยเคลื่อนที่ 20 วันล่าสุด ใช้เพื่อระบุความแข็งแกร่งของแนวโน้ม (Trend)
                     </Typography>
                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', p: 3, borderRadius: 3 }}>
-                        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>Logic การพยากรณ์:</Typography>
+                        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>Logic การคำนวณ:</Typography>
                         <ul style={{ paddingLeft: '20px', color: '#94a3b8' }}>
                             <li style={{ marginBottom: '8px' }}>
                                 <strong>ถ้าราคาอยู่เหนือ SMA 20:</strong> แสดงว่าราคาปัจจุบันสูงกว่าค่าเฉลี่ยของคนส่วนใหญ่ในรอบ 1 เดือน เป็นสัญญาณของ <strong>ขาขึ้น (Uptrend)</strong>
@@ -80,7 +80,7 @@ export default function Education() {
                         <strong>Bollinger Bands</strong> คือเครื่องมือที่ใช้วัดความผันผวนของราคาหุ้น โดยประกอบด้วยเส้นค่าเฉลี่ยเคลื่อนที่ (SMA) และเส้นขอบบน-ล่างที่ปรับตามความผันผวน
                     </Typography>
                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', p: 3, borderRadius: 3 }}>
-                        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>Logic การพยากรณ์:</Typography>
+                        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>Logic การคำนวณ:</Typography>
                         <ul style={{ paddingLeft: '20px', color: '#94a3b8' }}>
                             <li style={{ marginBottom: '8px' }}>
                                 <strong>ราคาแตะขอบล่าง:</strong> บ่งชี้ว่าราคาอาจจะ <strong>ถูกเกินไป (Undervalued)</strong> และมีโอกาสที่จะดีดตัวขึ้น
@@ -107,7 +107,7 @@ export default function Education() {
                         <strong>Moving Average Convergence Divergence (MACD)</strong> คือเครื่องมือที่ใช้วัดความสัมพันธ์ระหว่างค่าเฉลี่ยเคลื่อนที่สองเส้น เพื่อระบุการเปลี่ยนแปลงของโมเมนตัมและทิศทางแนวโน้ม
                     </Typography>
                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', p: 3, borderRadius: 3 }}>
-                        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>Logic การพยากรณ์:</Typography>
+                        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>Logic การคำนวณ:</Typography>
                         <ul style={{ paddingLeft: '20px', color: '#94a3b8' }}>
                             <li style={{ marginBottom: '8px' }}>
                                 <strong>MACD ตัด Signal Line ขึ้น:</strong> เป็นสัญญาณ <strong>ซื้อ (Buy Signal)</strong> บ่งบอกถึงโมเมนตัมขาขึ้น
@@ -134,7 +134,7 @@ export default function Education() {
                         <strong>Market Context</strong> คือการวิเคราะห์ภาพรวมของตลาดและปัจจัยภายนอกที่ส่งผลต่อราคาหุ้น เช่น สภาวะเศรษฐกิจ, ข่าวสารสำคัญ, หรือผลประกอบการของบริษัท
                     </Typography>
                     <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', p: 3, borderRadius: 3 }}>
-                        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>Logic การพยากรณ์:</Typography>
+                        <Typography variant="subtitle2" sx={{ color: 'primary.main', mb: 1 }}>Logic การคำนวณ:</Typography>
                         <ul style={{ paddingLeft: '20px', color: '#94a3b8' }}>
                             <li style={{ marginBottom: '8px' }}>
                                 <strong>ข่าวดี/ผลประกอบการดี:</strong> มักจะส่งผลให้ราคาหุ้นปรับตัวขึ้น
@@ -155,7 +155,7 @@ export default function Education() {
                         <Box sx={{ p: 1, bgcolor: 'rgba(168, 85, 247, 0.1)', borderRadius: 2 }}>
                             <Cpu size="28" color="#a855f7" variant="Bulk" />
                         </Box>
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>AI Multi-Factor Scoring</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700 }}>Multi-Factor Scoring Engine</Typography>
                     </Stack>
                     <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.8 }}>
                         TradingChill ไม่ได้ดูแค่กราฟ แต่ใช้ระบบรวบรวมข้อมูลหลายมิติมาคำนวณเป็นความมั่นใจ (Confidence Score)
