@@ -61,7 +61,7 @@ interface StockData {
   t: number; // time
 }
 
-const FINNHUB_KEY = process.env.NEXT_PUBLIC_FINNHUB_KEY;
+
 
 function HomeContent() {
   const { data: session } = useSession();
@@ -330,7 +330,7 @@ function HomeContent() {
     <Container maxWidth="xl" sx={{ py: 6 }}>
       {/* Hidden H1 for SEO */}
       <Typography component="h1" sx={{ display: 'none' }}>
-        TradingChill - วิเคราะห์หุ้นด้วยระบบ AI และเทคนิคอลอัจฉริยะ
+        TradingChill - เครื่องมือวิเคราะห์หุ้นเชิงปริมาณ ด้วยตัวชี้วัดทางเทคนิค ไม่ใช่คำแนะนำการลงทุน
       </Typography>
       {/* Watchlist Quick Links & Sync */}
       {session && (

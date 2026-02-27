@@ -5,7 +5,18 @@ export default function robots(): MetadataRoute.Robots {
         rules: {
             userAgent: '*',
             allow: '/',
-            disallow: '/api/',
+            disallow: [
+                '/api/',
+                '/admin/',
+                '/admin',
+                '/signals/',
+                '/signals',
+                '/history/',
+                '/history',
+                '/portfolio/',
+                '/portfolio',
+                '/auth/',
+            ],
         },
         sitemap: 'https://tradingchill.com/sitemap.xml',
     }

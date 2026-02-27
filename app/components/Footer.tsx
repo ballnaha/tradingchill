@@ -44,6 +44,10 @@ export default function Footer() {
                             <Chart size="16" color="#94a3b8" />
                             <Typography variant="caption" color="#94a3b8" sx={{ fontSize: '0.75rem', fontWeight: 600, '&:hover': { color: 'white' } }}>ระบบ Backtest</Typography>
                         </Link>
+                        <Link href="/disclaimer" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <InfoCircle size="16" color="#94a3b8" />
+                            <Typography variant="caption" color="#94a3b8" sx={{ fontSize: '0.75rem', fontWeight: 600, '&:hover': { color: 'white' } }}>ข้อตกลง & นโยบายความเป็นส่วนตัว</Typography>
+                        </Link>
                     </Stack>
 
                     <Stack direction="row" spacing={2} alignItems="center" divider={

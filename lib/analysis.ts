@@ -2,7 +2,7 @@ import { RSI, SMA, BollingerBands, MACD } from 'technicalindicators';
 import { StockQuote, getPrediction } from '@/app/utils/prediction';
 import { prisma } from './prisma';
 
-const FINNHUB_KEY = process.env.FINNHUB_KEY || process.env.NEXT_PUBLIC_FINNHUB_KEY;
+const FINNHUB_KEY = process.env.FINNHUB_KEY;
 
 export async function analyzeStock(symbol: string) {
     const sym = symbol.toUpperCase();

@@ -9,11 +9,11 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 
 export const metadata: Metadata = {
   title: {
-    default: "TradingChill - Smart Stock Analysis & AI Insights",
+    default: "TradingChill - เครื่องมือวิเคราะห์หุ้นเชิงปริมาณ",
     template: "%s | TradingChill"
   },
-  description: "Chill out while our quant algorithms and AI analyze the market for you. Real-time stock insights, technical indicators, and smart predictions for Thai and US markets.",
-  keywords: ["Stock Analysis", "AI Stock Prediction", "TradingChill", "วิเคราะห์หุ้น", "หุ้นไทย", "หุ้นอเมริกา", "Technical Indicators", "Financial Insights"],
+  description: "เครื่องมือวิเคราะห์ข้อมูลหุ้นสหรัฐฯ เชิงปริมาณ (Quantitative Analysis) ด้วยตัวชี้วัดทางเทคนิค RSI, SMA, Bollinger Bands, MACD — ไม่ใช่คำแนะนำการลงทุน",
+  keywords: ["Stock Analysis", "Quantitative Analysis", "TradingChill", "วิเคราะห์หุ้น", "Technical Indicators", "เครื่องมือวิเคราะห์หุ้น"],
   authors: [{ name: "TradingChill Team" }],
   creator: "TradingChill",
   publisher: "TradingChill",
@@ -27,8 +27,8 @@ export const metadata: Metadata = {
     locale: "th_TH",
     url: "https://tradingchill.com",
     siteName: "TradingChill",
-    title: "TradingChill - Smart Stock Analysis & AI Insights",
-    description: "Chill out while our quant algorithms and AI analyze the market for you. Real-time stock insights and smart predictions.",
+    title: "TradingChill - เครื่องมือวิเคราะห์หุ้นเชิงปริมาณ",
+    description: "เครื่องมือวิเคราะห์ข้อมูลหุ้นด้วยตัวชี้วัดทางเทคนิค — ข้อมูลเพื่อประกอบการตัดสินใจเท่านั้น ไม่ใช่คำแนะนำการลงทุน",
     images: [
       {
         url: "/images/logo.png",
@@ -40,8 +40,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "TradingChill - Smart Stock Analysis",
-    description: "AI-powered stock analysis and market insights.",
+    title: "TradingChill - เครื่องมือวิเคราะห์หุ้นเชิงปริมาณ",
+    description: "วิเคราะห์ข้อมูลหุ้นด้วยตัวชี้วัดทางเทคนิค — ไม่ใช่คำแนะนำการลงทุน",
     images: ["/images/logo.png"],
   },
   icons: {
