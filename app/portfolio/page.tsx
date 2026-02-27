@@ -270,7 +270,7 @@ export default function PortfolioPage() {
                         fullWidth
                         size="large"
                         onClick={() => signIn('google')}
-                        sx={{ borderRadius: 3, py: 1.5, fontWeight: 800, bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' } }}
+                        sx={{ borderRadius: 3, py: 1.5, fontWeight: 400, bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' } }}
                     >
                         เข้าสู่ระบบด้วย Google
                     </Button>

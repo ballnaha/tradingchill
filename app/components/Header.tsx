@@ -319,7 +319,7 @@ export default function Header() {
                                             px: 2,
                                             py: 0.8,
                                             fontSize: '0.75rem',
-                                            fontWeight: 800,
+                                            fontWeight: 400,
                                             color: 'white',
                                             borderColor: 'rgba(255,255,255,0.2)',
                                             bgcolor: 'rgba(255,255,255,0.03)',

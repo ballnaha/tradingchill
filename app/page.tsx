@@ -277,13 +277,17 @@ function HomeContent() {
 
   useEffect(() => {
     setMounted(true);
-    fetchWatchlist();
-    fetchWatchlistCache();
+    if (session) {
+      fetchWatchlist();
+      fetchWatchlistCache();
+    } else {
+      setWatchlistLoading(false);
+    }
 
     const initial = querySymbol || (typeof window !== 'undefined' ? localStorage.getItem('lastSymbol') || 'NVDA' : 'NVDA');
     setSymbol(initial);
     fetchStock(initial);
-  }, [querySymbol]);
+  }, [querySymbol, session]);
 
   const toggleFavorite = async (s: string) => {
     const isFav = userSymbols.includes(s);

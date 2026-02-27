@@ -1,9 +1,23 @@
 import { NextResponse } from 'next/server';
 
+// In-memory cache for candle data
+const cache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const symbol = (searchParams.get('symbol') || 'NVDA').toUpperCase();
     const rangeDays = parseInt(searchParams.get('days') || '250');
+
+    // Check cache
+    const cacheKey = `${symbol}_${rangeDays}`;
+    const cachedItem = cache.get(cacheKey);
+    const now = Date.now();
+    if (cachedItem && (now - cachedItem.timestamp < CACHE_TTL)) {
+        return NextResponse.json(cachedItem.data, {
+            headers: { 'X-Cache': 'HIT', 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60' }
+        });
+    }
 
     try {
         const period2 = Math.floor(Date.now() / 1000);
@@ -54,8 +68,14 @@ export async function GET(request: Request) {
             }
         }
 
-        // Return in the same format as Finnhub's stock/candle endpoint
-        return NextResponse.json({ s: 'ok', t, o, h, l, c, v });
+        const responseData = { s: 'ok', t, o, h, l, c, v };
+
+        // Store in cache
+        cache.set(cacheKey, { data: responseData, timestamp: now });
+
+        return NextResponse.json(responseData, {
+            headers: { 'X-Cache': 'MISS', 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60' }
+        });
     } catch (e: any) {
         console.error('Candle API error:', e);
         return NextResponse.json({ s: 'no_data', error: e.message }, { status: 500 });

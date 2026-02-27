@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     if (cachedItem && (now - cachedItem.timestamp < CACHE_TTL)) {
         console.log(`[Cache Hit] Serving ${symbol} from memory`);
         return NextResponse.json(cachedItem.data, {
-            headers: { 'X-Cache': 'HIT' }
+            headers: { 'X-Cache': 'HIT', 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60' }
         });
     }
 
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
         });
 
         return NextResponse.json(responseData, {
-            headers: { 'X-Cache': 'MISS' }
+            headers: { 'X-Cache': 'MISS', 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60' }
         });
     } catch (error: any) {
         console.error('Stock Bundle API Error:', error);
