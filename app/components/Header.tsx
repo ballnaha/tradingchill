@@ -11,6 +11,7 @@ const PUBLIC_NAV = [
     { label: 'วิเคราะห์', href: '/', icon: Cpu, color: '#0ea5e9' },
     { label: 'Market Pulse', href: '/market', icon: Activity, color: '#38bdf8' },
     { label: 'สแกนหุ้น', href: '/recommendations', icon: Ranking, color: '#fbbf24' },
+    { label: 'คำทำนาย', href: '/prophecy', icon: LampCharge, color: '#a78bfa' },
 ];
 
 const AUTH_NAV = [
