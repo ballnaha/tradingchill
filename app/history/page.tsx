@@ -142,8 +142,24 @@ export default function PredictionHistoryPage() {
         );
     }
 
+    if ((session?.user as any)?.status === 'suspended') {
+        return (
+            <Container maxWidth="sm" sx={{ py: 20 }}>
+                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 6, bgcolor: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                    <Box sx={{ mb: 4, p: 2, bgcolor: 'rgba(251, 191, 36, 0.1)', borderRadius: '50%', width: 80, height: 80, mx: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Activity size="40" color="#fbbf24" variant="Bulk" />
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 900, mb: 1, color: '#fbbf24' }}>บัญชีถูกระงับชั่วคราว</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        บัญชีของคุณถูกระงับชั่วคราว ไม่สามารถดูประวัติการวิเคราะห์ได้ กรุณาติดต่อผู้ดูแลระบบ
+                    </Typography>
+                </Paper>
+            </Container>
+        );
+    }
+
     return (
-        <Container maxWidth="lg" sx={{ py: 6 }}>
+        <Container maxWidth="xl" sx={{ py: 6 }}>
             <Box sx={{ mb: 6 }}>
                 <Typography variant="h3" sx={{ fontWeight: 900, mb: 1, color: 'white' }}>
                     Analysis <span style={{ color: '#0284c7' }}>History</span>
@@ -219,7 +235,7 @@ export default function PredictionHistoryPage() {
                         sx={{
                             display: { xs: 'none', lg: 'block' },
                             bgcolor: 'rgba(30, 41, 59, 0.4)',
-                            borderRadius: 4,
+                            borderRadius: 2,
                             border: '1px solid rgba(255,255,255,0.05)',
                             overflow: 'hidden'
                         }}

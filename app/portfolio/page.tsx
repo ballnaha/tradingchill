@@ -279,12 +279,28 @@ export default function PortfolioPage() {
         );
     }
 
+    if ((session?.user as any)?.status === 'suspended') {
+        return (
+            <Container maxWidth="sm" sx={{ py: 20 }}>
+                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 6, bgcolor: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                    <Box sx={{ mb: 4, p: 2, bgcolor: 'rgba(251, 191, 36, 0.1)', borderRadius: '50%', width: 80, height: 80, mx: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <WalletMoney size="40" color="#fbbf24" variant="Bulk" />
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 900, mb: 1, color: '#fbbf24' }}>บัญชีถูกระงับชั่วคราว</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        บัญชีของคุณถูกระงับชั่วคราว ไม่สามารถใช้งาน Portfolio Simulator ได้ กรุณาติดต่อผู้ดูแลระบบ
+                    </Typography>
+                </Paper>
+            </Container>
+        );
+    }
+
     if (loading) {
         return <Box sx={{ textAlign: 'center', py: 20 }}><CircularProgress /><Typography sx={{ mt: 2, color: 'text.secondary' }}>กำลังรวบรวมทรัพย์สินของคุณ...</Typography></Box>;
     }
 
     return (
-        <Container maxWidth="lg" sx={{ py: 6 }}>
+        <Container maxWidth="xl" sx={{ py: 6 }}>
             <Box sx={{
                 mb: 6,
                 display: 'flex',

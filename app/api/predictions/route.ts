@@ -38,6 +38,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Check if user is suspended (read-only mode)
+        const userStatus = (session.user as any).status;
+        if (userStatus === 'suspended') {
+            return NextResponse.json({ error: 'บัญชีของคุณถูกระงับชั่วคราว ไม่สามารถวิเคราะห์หุ้นได้' }, { status: 403 });
+        }
+
         const userId = (session.user as any).id;
         const body = await request.json() as {
             symbol: string;
@@ -104,7 +110,7 @@ export async function POST(request: Request) {
         });
 
         // Admin Check: Only the admin can update the global StockData (Recommendations)
-        const isAdmin = session?.user?.email === 'l3onsaiii@gmail.com';
+        const isAdmin = session?.user?.email === process.env.ADMIN_EMAIL;
 
         if (isAdmin) {
             // Upsert StockData — only the latest snapshot per symbol for Top Picks

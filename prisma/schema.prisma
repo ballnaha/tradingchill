@@ -100,6 +100,7 @@ model User {
   email             String?             @unique(map: "User_email_key")
   emailVerified     DateTime?
   image             String?
+  status            String              @default("active")
   account           Account[]
   portfolio         Portfolio[]
   predictionhistory PredictionHistory[]

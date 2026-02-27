@@ -7,7 +7,7 @@ import Link from 'next/link';
 
 export default function Education() {
     return (
-        <Container maxWidth="md" sx={{ py: 6 }}>
+        <Container maxWidth="xl" sx={{ py: 6 }}>
             {/* Header */}
             <Box sx={{ mb: 4 }}>
                 <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>คู่มือการใช้งานและการวิเคราะห์</Typography>

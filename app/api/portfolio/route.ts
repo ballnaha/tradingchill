@@ -27,6 +27,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Check if user is suspended (read-only mode)
+        const userStatus = (session.user as any).status;
+        if (userStatus === 'suspended') {
+            return NextResponse.json({ error: 'บัญชีของคุณถูกระงับชั่วคราว ไม่สามารถเพิ่ม Portfolio ได้' }, { status: 403 });
+        }
+
         const { symbol, name, shares, buyPrice } = await req.json();
         const newItem = await prisma.portfolio.create({
             data: {
@@ -49,6 +55,11 @@ export async function DELETE(req: Request) {
         const session = await getServerSession(authOptions);
         if (!session || !session.user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const userStatus = (session.user as any).status;
+        if (userStatus === 'suspended') {
+            return NextResponse.json({ error: 'บัญชีของคุณถูกระงับชั่วคราว ไม่สามารถจัดการ Portfolio ได้' }, { status: 403 });
         }
 
         const { id } = await req.json();

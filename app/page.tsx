@@ -207,7 +207,7 @@ function HomeContent() {
         await fetch('/api/predictions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...newPick, targetPrice: newPick.target })
+          body: JSON.stringify({ ...newPick, targetPrice: newPick.targetNextDay })
         });
       }
 
@@ -327,7 +327,7 @@ function HomeContent() {
   if (!mounted) return null;
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <Container maxWidth="xl" sx={{ py: 6 }}>
       {/* Hidden H1 for SEO */}
       <Typography component="h1" sx={{ display: 'none' }}>
         TradingChill - วิเคราะห์หุ้นด้วยระบบ AI และเทคนิคอลอัจฉริยะ
@@ -360,7 +360,7 @@ function HomeContent() {
                 </Button>
                 {(typeof window !== 'undefined' && localStorage.getItem('lastGlobalSync')) && (
                   <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem' }}>
-                    อัปเดตล่าสุด: {new Date(localStorage.getItem('lastGlobalSync')!).toLocaleTimeString('th-TH')}
+                    อัปเดตล่าสุด: {new Date(localStorage.getItem('lastGlobalSync')!).toLocaleString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </Typography>
                 )}
               </Stack>
@@ -559,8 +559,8 @@ function HomeContent() {
                     { label: 'Yesterday (Close)', value: `$${quote.previousClose.toLocaleString()}` },
                     { label: 'Today (Open)', value: `$${quote.open.toLocaleString()}` },
                     { label: 'Forecast Target', value: `$${parseFloat(prediction?.target || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
-                    { label: '52W High', value: `$${quote.yearHigh?.toFixed(2)}` },
-                    { label: '52W Low', value: `$${quote.yearLow?.toFixed(2)}` },
+                    { label: '52W High', value: `$${(quote.yearHigh || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                    { label: '52W Low', value: `$${(quote.yearLow || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
                     { label: 'Volume', value: (quote.volume || 0).toLocaleString() },
                   ].map((item, i) => (
                     <Box key={i} sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.04)' }}>

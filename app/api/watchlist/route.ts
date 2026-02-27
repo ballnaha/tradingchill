@@ -28,6 +28,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Check if user is suspended (read-only mode)
+        const userStatus = (session.user as any).status;
+        if (userStatus === 'suspended') {
+            return NextResponse.json({ error: 'บัญชีของคุณถูกระงับชั่วคราว ไม่สามารถเพิ่ม Watchlist ได้' }, { status: 403 });
+        }
+
         const userId = (session.user as any).id;
         const body = await request.json() as { symbol: string; name?: string };
         const { symbol, name } = body;
@@ -68,6 +74,11 @@ export async function DELETE(request: Request) {
         const session = await getServerSession(authOptions);
         if (!session || !session.user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const userStatus = (session.user as any).status;
+        if (userStatus === 'suspended') {
+            return NextResponse.json({ error: 'บัญชีของคุณถูกระงับชั่วคราว ไม่สามารถจัดการ Watchlist ได้' }, { status: 403 });
         }
 
         const userId = (session.user as any).id;

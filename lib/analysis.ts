@@ -116,7 +116,7 @@ export async function updateGlobalStockData(symbol: string) {
         pe: analysis.pe,
         predictionTrend: analysis.trend,
         predictionConfidence: parseFloat(analysis.confidence) || 0,
-        predictionTarget: parseFloat(analysis.target),
+        predictionTarget: parseFloat(analysis.targetNextDay),
         predictionReasoning: analysis.reasoning,
         date: new Date()
     };

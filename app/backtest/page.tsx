@@ -129,7 +129,7 @@ export default function BacktestPage() {
 
 
     return (
-        <Container maxWidth="lg" sx={{ py: 6 }}>
+        <Container maxWidth="xl" sx={{ py: 6 }}>
             {/* Title */}
             <Box sx={{ textAlign: 'center', mb: 5 }}>
                 <Stack direction="row" spacing={1.5} justifyContent="center" alignItems="center" sx={{ mb: 1 }}>

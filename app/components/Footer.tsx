@@ -14,7 +14,7 @@ export default function Footer() {
                 bgcolor: 'rgba(15, 23, 42, 0.6)',
             }}
         >
-            <Container maxWidth="lg">
+            <Container maxWidth="xl">
                 <Stack
                     direction={{ xs: 'column', md: 'row' }}
                     justifyContent="space-between"

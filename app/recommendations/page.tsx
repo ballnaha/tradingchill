@@ -28,6 +28,7 @@ import {
     InfoCircle,
     ArrowRight2,
     Refresh2,
+    Setting2,
 } from 'iconsax-react';
 import Link from 'next/link';
 
@@ -170,7 +171,7 @@ const StockItem = ({ stock }: { stock: RecommendedStock }) => (
         >
             <Stack direction="row" spacing={2}>
                 <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>Target</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>Target (1D)</Typography>
                     <Typography variant="body2" className="font-mono" sx={{ fontWeight: 800, color: '#38bdf8' }}>
                         ${stock.predictionTarget?.toFixed(2)}
                     </Typography>
@@ -204,7 +205,7 @@ const StockItem = ({ stock }: { stock: RecommendedStock }) => (
 
 export default function RecommendationsPage() {
     const { data: session } = useSession();
-    const isAdmin = session?.user?.email === 'l3onsaiii@gmail.com';
+    const isAdmin = session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
     const [stocks, setStocks] = useState<RecommendedStock[]>([]);
     const [loading, setLoading] = useState(true);
@@ -294,7 +295,7 @@ export default function RecommendationsPage() {
                 zIndex: -1, pointerEvents: 'none'
             }} />
 
-            <Container maxWidth="lg" sx={{ py: 6, position: 'relative' }}>
+            <Container maxWidth="xl" sx={{ py: 6, position: 'relative' }}>
 
                 {/* Header Section */}
                 <Box sx={{ mb: 6 }}>
@@ -321,22 +322,22 @@ export default function RecommendationsPage() {
 
                         {isAdmin && (
                             <Box sx={{ ml: 'auto' }}>
-                                <Button
-                                    variant="outlined"
-                                    onClick={handleSync}
-                                    disabled={syncing}
-                                    startIcon={syncing ? <CircularProgress size={16} /> : <Refresh2 size="18" />}
-                                    sx={{
-                                        borderRadius: 2,
-                                        borderColor: 'rgba(14, 165, 233, 0.3)',
-                                        color: '#0ea5e9',
-                                        fontWeight: 800,
-                                        textTransform: 'none',
-                                        '&:hover': { borderColor: '#0ea5e9', bgcolor: 'rgba(14, 165, 233, 0.05)' }
-                                    }}
-                                >
-                                    {syncing ? 'กำลังอัปเดตระบบ...' : 'Sync Global Data (Admin)'}
-                                </Button>
+                                <Link href="/admin" passHref style={{ textDecoration: 'none' }}>
+                                    <Button
+                                        variant="outlined"
+                                        startIcon={<Setting2 size="18" variant="Bold" color="#0ea5e9" />}
+                                        sx={{
+                                            borderRadius: 2,
+                                            borderColor: 'rgba(14, 165, 233, 0.3)',
+                                            color: '#0ea5e9',
+                                            fontWeight: 800,
+                                            textTransform: 'none',
+                                            '&:hover': { borderColor: '#0ea5e9', bgcolor: 'rgba(14, 165, 233, 0.05)' }
+                                        }}
+                                    >
+                                        Go to Admin Dashboard
+                                    </Button>
+                                </Link>
                             </Box>
                         )}
                     </Stack>

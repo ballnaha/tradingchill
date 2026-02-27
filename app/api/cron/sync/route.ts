@@ -4,28 +4,36 @@ import { updateGlobalStockData } from '@/lib/analysis';
 
 export const dynamic = 'force-dynamic';
 
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+
 export async function GET(req: NextRequest) {
-    // Basic protection using a CRON_SECRET or similar
+    // 1. Check for valid CRON_SECRET in headers
     const authHeader = req.headers.get('authorization');
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const isCronTokenValid = process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`;
+
+    // 2. Check for valid Admin session (if called from UI)
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.email === process.env.ADMIN_EMAIL;
+
+    if (!isCronTokenValid && !isAdmin) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
-        // 1. Get symbols to update:
-        // - Existing recommended stocks
-        // - Plus some core market leaders
-        const existingStocks = await prisma.stockData.findMany({
+        // 1. Get ALL symbols from StockData table
+        // These are the stocks being tracked for Global Recommendations
+        const trackedStocks = await prisma.stockData.findMany({
             select: { symbol: true }
         });
 
-        const coreStocks = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'GOOGL', 'META', 'SPY', 'QQQ', 'BTC-USD'];
-        const uniqueSymbols = Array.from(new Set([
-            ...existingStocks.map(s => s.symbol),
-            ...coreStocks
-        ]));
+        const uniqueSymbols = trackedStocks.map(s => s.symbol);
 
-        console.log(`[Cron] Starting auto-sync for ${uniqueSymbols.length} stocks...`);
+        if (uniqueSymbols.length === 0) {
+            return NextResponse.json({ message: 'No stocks found to sync. Add some in the Admin panel.' });
+        }
+
+        console.log(`[Cron] Starting auto-sync for ${uniqueSymbols.length} tracked stocks...`);
 
         const results = [];
         for (const symbol of uniqueSymbols) {

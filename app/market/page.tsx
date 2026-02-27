@@ -237,7 +237,7 @@ export default function MarketPulsePage() {
     const sentiment = sentimentScore > 60 ? 'POSITIVE' : sentimentScore < 40 ? 'NEGATIVE' : 'NEUTRAL';
 
     return (
-        <Container maxWidth="lg" sx={{ py: 6 }}>
+        <Container maxWidth="xl" sx={{ py: 6 }}>
             <Box sx={{ mb: 6 }}>
                 <Typography variant="h3" sx={{ fontWeight: 900, mb: 1, color: 'white' }}>
                     Market <span style={{ color: '#0284c7' }}>Pulse</span>
@@ -313,7 +313,7 @@ export default function MarketPulsePage() {
                         }}>
                             <Box>
                                 <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 800, color: '#4ade80', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <TrendUp size="18" /> TOP GAINERS
+                                    <TrendUp size="18" variant="Linear" color="#4ade80" /> TOP GAINERS
                                 </Typography>
                                 <Stack spacing={1.5}>
                                     {gainers.map((stock) => (
@@ -330,7 +330,7 @@ export default function MarketPulsePage() {
 
                             <Box>
                                 <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 800, color: '#f87171', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <TrendDown size="18" /> TOP LOSERS
+                                    <TrendDown size="18" variant="Linear" color="#f87171" /> TOP LOSERS
                                 </Typography>
                                 <Stack spacing={1.5}>
                                     {losers.map((stock) => (
