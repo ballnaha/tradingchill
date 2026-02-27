@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import {
     Container,
     Box,
@@ -13,6 +14,7 @@ import {
     Tooltip,
     Divider,
     LinearProgress,
+    CircularProgress,
 } from '@mui/material';
 import {
     Ranking,
@@ -25,6 +27,7 @@ import {
     Star,
     InfoCircle,
     ArrowRight2,
+    Refresh2,
 } from 'iconsax-react';
 import Link from 'next/link';
 
@@ -183,7 +186,7 @@ const StockItem = ({ stock }: { stock: RecommendedStock }) => (
             <Link href={`/?symbol=${stock.symbol}`} style={{ textDecoration: 'none' }}>
                 <Button
                     variant="text"
-                    endIcon={<ArrowRight2 size="16" />}
+                    endIcon={<ArrowRight2 size="16" variant='Bold' color='#0ea5e9' />}
                     sx={{
                         color: '#0ea5e9',
                         fontWeight: 700,
@@ -200,8 +203,12 @@ const StockItem = ({ stock }: { stock: RecommendedStock }) => (
 );
 
 export default function RecommendationsPage() {
+    const { data: session } = useSession();
+    const isAdmin = session?.user?.email === 'l3onsaiii@gmail.com';
+
     const [stocks, setStocks] = useState<RecommendedStock[]>([]);
     const [loading, setLoading] = useState(true);
+    const [syncing, setSyncing] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [filter, setFilter] = useState<'ALL' | 'OVERSOLD' | 'HIGH_CONFIDENCE' | 'BULLISH'>('ALL');
 
@@ -222,6 +229,24 @@ export default function RecommendationsPage() {
             console.error('Failed to fetch recommendations:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSync = async () => {
+        if (!isAdmin) return;
+        setSyncing(true);
+        try {
+            const res = await fetch('/api/cron/sync');
+            const data = await res.json();
+            if (data.message) {
+                alert(`อัปเดตเรียบร้อย: ${data.count} รายการ`);
+                fetchStocks();
+            }
+        } catch (error) {
+            console.error('Sync failed:', error);
+            alert('การอัปเดตล้มเหลว');
+        } finally {
+            setSyncing(false);
         }
     };
 
@@ -246,6 +271,12 @@ export default function RecommendationsPage() {
 
         return result;
     }, [stocks, filter]);
+
+    const groupedStocks = useMemo(() => {
+        const bull = filteredStocks.filter((s: RecommendedStock) => s.predictionTrend === 'UP');
+        const bear = filteredStocks.filter((s: RecommendedStock) => s.predictionTrend !== 'UP');
+        return { bull, bear };
+    }, [filteredStocks]);
 
     if (!mounted) return null;
 
@@ -287,6 +318,27 @@ export default function RecommendationsPage() {
                                 </Typography>
                             </Stack>
                         </Box>
+
+                        {isAdmin && (
+                            <Box sx={{ ml: 'auto' }}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={handleSync}
+                                    disabled={syncing}
+                                    startIcon={syncing ? <CircularProgress size={16} /> : <Refresh2 size="18" />}
+                                    sx={{
+                                        borderRadius: 2,
+                                        borderColor: 'rgba(14, 165, 233, 0.3)',
+                                        color: '#0ea5e9',
+                                        fontWeight: 800,
+                                        textTransform: 'none',
+                                        '&:hover': { borderColor: '#0ea5e9', bgcolor: 'rgba(14, 165, 233, 0.05)' }
+                                    }}
+                                >
+                                    {syncing ? 'กำลังอัปเดตระบบ...' : 'Sync Global Data (Admin)'}
+                                </Button>
+                            </Box>
+                        )}
                     </Stack>
 
                     {/* Filter Section */}
@@ -397,28 +449,54 @@ export default function RecommendationsPage() {
                         </Button>
                     </Card>
                 ) : (
-                    <Stack spacing={8}>
-                        {/* Results Section */}
-                        <Box>
-                            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
-                                <Ranking size="24" color="#0ea5e9" variant="Bold" />
-                                <Typography variant="h5" sx={{ fontWeight: 800, color: 'white' }}>
-                                    {filter === 'ALL' ? 'หุ้นแนะนำทั้งหมด' : filter === 'OVERSOLD' ? 'โอกาสจุดกลับตัว (RSI ต่ำ)' : filter === 'HIGH_CONFIDENCE' ? 'หุ้นคัดเกรดความแม่นยำสูง' : 'หุ้นเทรนด์ขาขึ้นแข็งแกร่ง'}
-                                    <Typography component="span" variant="caption" sx={{ ml: 1.5, color: '#0ea5e9', fontWeight: 700, bgcolor: 'rgba(14, 165, 233, 0.1)', px: 1, py: 0.3, borderRadius: 1.5 }}>
-                                        {filteredStocks.length} รายการ
+                    <Stack spacing={6}>
+                        {/* Bull Section */}
+                        {groupedStocks.bull.length > 0 && (
+                            <Box>
+                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
+                                    <TrendUp size="24" color="#4ade80" variant="Bold" />
+                                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'white' }}>
+                                        หุ้นแนะนำฝั่งขาขึ้น (Bullish)
+                                        <Typography component="span" variant="caption" sx={{ ml: 1.5, color: '#4ade80', fontWeight: 700, bgcolor: 'rgba(74, 222, 128, 0.1)', px: 1, py: 0.3, borderRadius: 1.5 }}>
+                                            {groupedStocks.bull.length} รายการ
+                                        </Typography>
                                     </Typography>
-                                </Typography>
-                            </Stack>
-                            <Box sx={{
-                                display: 'grid',
-                                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' },
-                                gap: 2
-                            }}>
-                                {filteredStocks.map((stock) => (
-                                    <StockItem key={stock.id} stock={stock} />
-                                ))}
+                                </Stack>
+                                <Box sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' },
+                                    gap: 2
+                                }}>
+                                    {groupedStocks.bull.map((stock: RecommendedStock) => (
+                                        <StockItem key={stock.id} stock={stock} />
+                                    ))}
+                                </Box>
                             </Box>
-                        </Box>
+                        )}
+
+                        {/* Bear Section */}
+                        {groupedStocks.bear.length > 0 && (
+                            <Box>
+                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
+                                    <TrendDown size="24" color="#ef4444" variant="Bold" />
+                                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'white' }}>
+                                        หุ้นแนะนำฝั่งขาลง (Bearish)
+                                        <Typography component="span" variant="caption" sx={{ ml: 1.5, color: '#ef4444', fontWeight: 700, bgcolor: 'rgba(239, 68, 68, 0.1)', px: 1, py: 0.3, borderRadius: 1.5 }}>
+                                            {groupedStocks.bear.length} รายการ
+                                        </Typography>
+                                    </Typography>
+                                </Stack>
+                                <Box sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' },
+                                    gap: 2
+                                }}>
+                                    {groupedStocks.bear.map((stock: RecommendedStock) => (
+                                        <StockItem key={stock.id} stock={stock} />
+                                    ))}
+                                </Box>
+                            </Box>
+                        )}
                     </Stack>
                 )}
 

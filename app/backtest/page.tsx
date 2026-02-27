@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Box, Container, Typography, Button, Card, Stack, CircularProgress,
     Chip, LinearProgress, Divider, ToggleButton, ToggleButtonGroup,
-    TextField, Paper, Autocomplete, InputAdornment, Skeleton
+    TextField, Paper, Autocomplete, InputAdornment, Skeleton, TablePagination
 } from '@mui/material';
 import { TrendUp, TrendDown, Activity, Chart, SearchNormal1, InfoCircle, Star } from 'iconsax-react';
 
@@ -59,6 +59,8 @@ export default function BacktestPage() {
     const [favoritesLoading, setFavoritesLoading] = useState(true);
     const [searchOptions, setSearchOptions] = useState<any[]>([]);
     const [searchInput, setSearchInput] = useState('');
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(15);
 
     // Fetch watchlist favorites on mount
     useEffect(() => {
@@ -102,6 +104,7 @@ export default function BacktestPage() {
         setLoading(true);
         setError('');
         setResult(null);
+        setPage(0); // Reset page on new run
         try {
             const res = await fetch(`/api/backtest?symbol=${symbol.toUpperCase()}&days=${days}`);
             const data = await res.json();
@@ -112,6 +115,15 @@ export default function BacktestPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleChangePage = (event: unknown, newPage: number) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
     };
 
 
@@ -222,8 +234,9 @@ export default function BacktestPage() {
                                 getOptionLabel={(option: any) => typeof option === 'string' ? option : `${option.symbol} — ${option.description}`}
                                 inputValue={searchInput}
                                 onInputChange={(_, value) => {
-                                    setSearchInput(value);
-                                    searchSymbols(value);
+                                    const upperValue = value.toUpperCase();
+                                    setSearchInput(upperValue);
+                                    searchSymbols(upperValue);
                                 }}
                                 onChange={(_, value) => {
                                     if (value) {
@@ -232,21 +245,24 @@ export default function BacktestPage() {
                                         setSearchInput('');
                                     }
                                 }}
-                                renderOption={(props, option: any) => (
-                                    <Box component="li" {...props} sx={{
-                                        display: 'flex', justifyContent: 'space-between', gap: 2,
-                                        py: 1.2, px: 2,
-                                        '&:hover': { bgcolor: 'rgba(14,165,233,0.08) !important' }
-                                    }}>
-                                        <Box>
-                                            <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#f8fafc' }}>{option.symbol}</Typography>
-                                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', display: 'block', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {option.description}
-                                            </Typography>
+                                renderOption={(props, option: any) => {
+                                    const { key, ...optionProps } = props;
+                                    return (
+                                        <Box key={key} component="li" {...optionProps} sx={{
+                                            display: 'flex', justifyContent: 'space-between', gap: 2,
+                                            py: 1.2, px: 2,
+                                            '&:hover': { bgcolor: 'rgba(14,165,233,0.08) !important' }
+                                        }}>
+                                            <Box>
+                                                <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#f8fafc' }}>{option.symbol}</Typography>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', display: 'block', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {option.description}
+                                                </Typography>
+                                            </Box>
+                                            <Chip label={option.type} size="small" sx={{ fontSize: '0.55rem', height: 18, bgcolor: 'rgba(255,255,255,0.05)', color: 'text.secondary' }} />
                                         </Box>
-                                        <Chip label={option.type} size="small" sx={{ fontSize: '0.55rem', height: 18, bgcolor: 'rgba(255,255,255,0.05)', color: 'text.secondary' }} />
-                                    </Box>
-                                )}
+                                    );
+                                }}
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
@@ -481,58 +497,77 @@ export default function BacktestPage() {
 
                     {/* Results Table */}
                     <div className="glass-card">
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>รายละเอียด 60 วันล่าสุด</Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>รายละเอียดการทำนายทั้งหมด ({result.results.length} วัน)</Typography>
                         <Box sx={{ overflowX: 'auto' }}>
                             <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
                                 <Box component="thead">
                                     <Box component="tr" sx={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                        {['วันที่', 'ราคา', 'ระบบทำนาย', 'Confidence', 'Target', 'ราคาจริง (+3วัน)', 'เปลี่ยน%', 'ผล'].map(h => (
+                                        {['วันที่', 'ราคา', 'ระบบทำนาย', 'Confidence', 'Target', 'ราคาจริง (+1วัน)', 'เปลี่ยน%', 'ผล'].map(h => (
                                             <Box component="th" key={h} sx={{ py: 1.2, px: 1.5, textAlign: 'left', color: 'rgba(255,255,255,0.4)', fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</Box>
                                         ))}
                                     </Box>
                                 </Box>
                                 <Box component="tbody">
-                                    {[...result.results].reverse().map((r: any, i: number) => (
-                                        <Box component="tr" key={i} sx={{
-                                            borderBottom: '1px solid rgba(255,255,255,0.04)',
-                                            transition: 'background 0.15s',
-                                            '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' }
-                                        }}>
-                                            <Box component="td" sx={{ py: 1, px: 1.5, color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>{r.date}</Box>
-                                            <Box component="td" className="font-mono" sx={{ py: 1, px: 1.5, fontWeight: 600 }}>${r.price}</Box>
-                                            <Box component="td" sx={{ py: 1, px: 1.5 }}>
-                                                <Chip
-                                                    size="small"
-                                                    label={r.predictedTrend}
-                                                    sx={{
-                                                        bgcolor: r.predictedTrend === 'UP' ? 'rgba(74,222,128,0.12)' : r.predictedTrend === 'DOWN' ? 'rgba(248,113,113,0.12)' : 'rgba(148,163,184,0.12)',
-                                                        color: r.predictedTrend === 'UP' ? '#4ade80' : r.predictedTrend === 'DOWN' ? '#f87171' : '#94a3b8',
-                                                        fontSize: '0.6rem', height: 20, fontWeight: 700
-                                                    }}
-                                                />
+                                    {[...result.results]
+                                        .reverse()
+                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                        .map((r: any, i: number) => (
+                                            <Box component="tr" key={i} sx={{
+                                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                transition: 'background 0.15s',
+                                                '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' }
+                                            }}>
+                                                <Box component="td" sx={{ py: 1, px: 1.5, color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>{r.date}</Box>
+                                                <Box component="td" className="font-mono" sx={{ py: 1, px: 1.5, fontWeight: 600 }}>${r.price}</Box>
+                                                <Box component="td" sx={{ py: 1, px: 1.5 }}>
+                                                    <Chip
+                                                        size="small"
+                                                        label={r.predictedTrend}
+                                                        sx={{
+                                                            bgcolor: r.predictedTrend === 'UP' ? 'rgba(74,222,128,0.12)' : r.predictedTrend === 'DOWN' ? 'rgba(248,113,113,0.12)' : 'rgba(148,163,184,0.12)',
+                                                            color: r.predictedTrend === 'UP' ? '#4ade80' : r.predictedTrend === 'DOWN' ? '#f87171' : '#94a3b8',
+                                                            fontSize: '0.6rem', height: 20, fontWeight: 700
+                                                        }}
+                                                    />
+                                                </Box>
+                                                <Box component="td" sx={{ py: 1, px: 1.5 }}>
+                                                    <Typography className="font-mono" sx={{ fontSize: '0.7rem', color: r.confidence >= 75 ? '#a78bfa' : r.confidence >= 60 ? '#fbbf24' : 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                                                        {r.confidence}%
+                                                    </Typography>
+                                                </Box>
+                                                <Box component="td" className="font-mono" sx={{ py: 1, px: 1.5, color: 'rgba(255,255,255,0.6)' }}>${r.targetPrice.toFixed(2)}</Box>
+                                                <Box component="td" className="font-mono" sx={{ py: 1, px: 1.5, fontWeight: 600 }}>${r.actualPrice}</Box>
+                                                <Box component="td" sx={{ py: 1, px: 1.5 }}>
+                                                    <Typography className="font-mono" sx={{ fontSize: '0.7rem', color: r.actualChangePct > 0 ? '#4ade80' : '#f87171', fontWeight: 600 }}>
+                                                        {r.actualChangePct > 0 ? '+' : ''}{r.actualChangePct}%
+                                                    </Typography>
+                                                </Box>
+                                                <Box component="td" sx={{ py: 1, px: 1.5 }}>
+                                                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 800 }}>
+                                                        {r.correct ? '✅' : '❌'}
+                                                    </Typography>
+                                                </Box>
                                             </Box>
-                                            <Box component="td" sx={{ py: 1, px: 1.5 }}>
-                                                <Typography className="font-mono" sx={{ fontSize: '0.7rem', color: r.confidence >= 75 ? '#a78bfa' : r.confidence >= 60 ? '#fbbf24' : 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
-                                                    {r.confidence}%
-                                                </Typography>
-                                            </Box>
-                                            <Box component="td" className="font-mono" sx={{ py: 1, px: 1.5, color: 'rgba(255,255,255,0.6)' }}>${r.targetPrice.toFixed(2)}</Box>
-                                            <Box component="td" className="font-mono" sx={{ py: 1, px: 1.5, fontWeight: 600 }}>${r.actualPrice}</Box>
-                                            <Box component="td" sx={{ py: 1, px: 1.5 }}>
-                                                <Typography className="font-mono" sx={{ fontSize: '0.7rem', color: r.actualChangePct > 0 ? '#4ade80' : '#f87171', fontWeight: 600 }}>
-                                                    {r.actualChangePct > 0 ? '+' : ''}{r.actualChangePct}%
-                                                </Typography>
-                                            </Box>
-                                            <Box component="td" sx={{ py: 1, px: 1.5 }}>
-                                                <Typography sx={{ fontSize: '0.75rem', fontWeight: 800 }}>
-                                                    {r.correct ? '✅' : '❌'}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    ))}
+                                        ))}
                                 </Box>
                             </Box>
                         </Box>
+                        <TablePagination
+                            rowsPerPageOptions={[15, 30, 50, 100]}
+                            component="div"
+                            count={result.results.length}
+                            rowsPerPage={rowsPerPage}
+                            page={page}
+                            onPageChange={handleChangePage}
+                            onRowsPerPageChange={handleChangeRowsPerPage}
+                            sx={{
+                                color: 'text.secondary',
+                                borderTop: '1px solid rgba(255,255,255,0.06)',
+                                transition: 'all 0.2s',
+                                '.MuiTablePagination-selectIcon': { color: 'rgba(255,255,255,0.5)' },
+                                '.MuiTablePagination-actions': { color: '#0ea5e9' }
+                            }}
+                        />
                     </div>
                 </Box>
             )}

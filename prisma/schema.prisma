@@ -90,6 +90,7 @@ model StockData {
   predictionConfidence Float?
   predictionTarget     Float?
   predictionReasoning  String?  @db.Text
+
   @@map("stockdata")
 }
 
@@ -104,6 +105,7 @@ model User {
   predictionhistory PredictionHistory[]
   session           Session[]
   watchlist         Watchlist[]
+
   @@map("user")
 }
 

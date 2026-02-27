@@ -58,9 +58,12 @@ export interface PredictionResult {
     trend: 'UP' | 'DOWN' | 'Neutral';
     confidence: string;
     target: string;
+    targetNextDay: string;
     days: number;
     period: string;
     reasoning: string;
+    symbol: string;
+    currentPrice: number;
     reasoningPoints: { label: string; value: string; signal: 'positive' | 'negative' | 'neutral' }[];
 }
 
@@ -415,15 +418,21 @@ export const getPrediction = (q: StockQuote): PredictionResult => {
     const betaMul = q.beta ? Math.max(0.5, Math.min(q.beta, 2.5)) : 1.0;
     const baseVol = Math.min(Math.abs(q.changePercent) / 100, 0.04);
     let targetPrice = q.price;
+    let targetNextDay = q.price;
 
     if (trend === 'UP') {
-        const move = Math.min((0.015 + baseVol * betaMul + (score > 5 ? 0.015 : 0)), 0.10);
+        const move = Math.min((0.015 + baseVol * betaMul + (score > 5 ? 0.02 : 0)), 0.10);
+        const nextMove = move * 0.45; // Roughly 45% of 3-day move for first day
         targetPrice = q.price * (1 + move);
+        targetNextDay = q.price * (1 + nextMove);
     } else if (trend === 'DOWN') {
-        const move = Math.min((0.012 + baseVol * betaMul + (Math.abs(score) > 5 ? 0.01 : 0)), 0.10);
+        const move = Math.min((0.012 + baseVol * betaMul + (Math.abs(score) > 5 ? 0.015 : 0)), 0.10);
+        const nextMove = move * 0.45;
         targetPrice = q.price * (1 - move);
+        targetNextDay = q.price * (1 - nextMove);
     } else {
         targetPrice = q.price * (1 + (q.changePercent > 0 ? 0.003 : -0.003));
+        targetNextDay = q.price * (1 + (q.changePercent > 0 ? 0.001 : -0.001));
     }
 
     // Forecast dates (skip weekends)
@@ -447,9 +456,12 @@ export const getPrediction = (q: StockQuote): PredictionResult => {
         trend,
         confidence: confidence.toFixed(1),
         target: targetPrice.toFixed(2),
+        targetNextDay: targetNextDay.toFixed(2),
         days: 3,
         period: `${fmt(startDate)} - ${fmt(endDate)}`,
         reasoning,
+        symbol: q.symbol,
+        currentPrice: q.price,
         reasoningPoints
     };
 };

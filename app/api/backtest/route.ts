@@ -87,7 +87,7 @@ export async function GET(request: Request) {
 
         console.log(`[Backtest] ${symbol}: ${closes.length} candles, warmup=${warmup}, startIdx=${startIdx}, testRange=${closes.length - 3 - startIdx}`);
 
-        for (let i = startIdx; i < closes.length - 3; i++) {
+        for (let i = startIdx; i < closes.length - 1; i++) {
             const slicedCloses = closes.slice(0, i + 1);
             const slicedVols = volumes.slice(0, i + 1);
 
@@ -125,8 +125,8 @@ export async function GET(request: Request) {
             }
 
             const currentPrice = closes[i];
-            const prevPrice = closes[i - 1];
-            const avgVol10d = slicedVols.slice(-11, -1).reduce((a, b) => a + b, 0) / 10;
+            const prevPrice = i > 0 ? closes[i - 1] : currentPrice;
+            const avgVol10d = i >= 10 ? slicedVols.slice(-11, -1).reduce((a, b) => a + b, 0) / 10 : (slicedVols.reduce((a, b) => a + b, 0) / (i + 1));
 
             // OHLC for candlestick
             const sliceLen = Math.min(5, i + 1);
@@ -139,7 +139,7 @@ export async function GET(request: Request) {
                 symbol,
                 price: currentPrice,
                 change: currentPrice - prevPrice,
-                changePercent: ((currentPrice - prevPrice) / prevPrice) * 100,
+                changePercent: prevPrice !== 0 ? ((currentPrice - prevPrice) / prevPrice) * 100 : 0,
                 high: highs[i],
                 low: lows[i],
                 open: opens[i],
@@ -153,23 +153,22 @@ export async function GET(request: Request) {
 
             const pred = getPrediction(quote);
 
-            // Actual price 3 trading days later
-            const futureIdx = Math.min(i + 3, closes.length - 1);
+            // Actual price 1 trading day later (Next Day)
+            const futureIdx = i + 1;
             const actualPrice = closes[futureIdx];
             const actualChangePct = ((actualPrice - currentPrice) / currentPrice) * 100;
 
-            // Direction-based correctness (fairer evaluation):
-            // UP prediction is correct if price went up (>0%)
-            // DOWN prediction is correct if price went down (<0%)
-            // Neutral prediction is correct if price changed < 1% either way
+            // Direction-based correctness for NEXT DAY
             let correct = false;
+            // More sensitive neutral for day-by-day (0.5% instead of 1.0%)
+            const neutralThreshold = 0.5;
+
             if (pred.trend === 'UP') {
                 correct = actualChangePct > 0;
             } else if (pred.trend === 'DOWN') {
                 correct = actualChangePct < 0;
             } else {
-                // Neutral — correct if price stayed relatively flat
-                correct = Math.abs(actualChangePct) < 1.0;
+                correct = Math.abs(actualChangePct) < neutralThreshold;
             }
 
             results.push({
@@ -177,11 +176,11 @@ export async function GET(request: Request) {
                 price: currentPrice.toFixed(2),
                 predictedTrend: pred.trend,
                 confidence: parseFloat(pred.confidence),
-                targetPrice: parseFloat(pred.target),
+                targetPrice: parseFloat(pred.targetNextDay), // Use next-day target for backtest
                 actualPrice: parseFloat(actualPrice.toFixed(2)),
                 actualChangePct: parseFloat(actualChangePct.toFixed(2)),
                 correct,
-                priceError: parseFloat((Math.abs(actualPrice - parseFloat(pred.target)) / currentPrice * 100).toFixed(2)),
+                priceError: parseFloat((Math.abs(actualPrice - parseFloat(pred.targetNextDay)) / currentPrice * 100).toFixed(2)),
             });
         }
 
@@ -218,7 +217,7 @@ export async function GET(request: Request) {
             lowConfAccuracy: accuracy(lowConf),
             highConfCount: highConf.length,
             avgPriceError: parseFloat((results.reduce((s, r) => s + r.priceError, 0) / total).toFixed(2)),
-            results: results.slice(-60), // Last 60 days for chart
+            results: results, // Return all results for that period
         });
 
     } catch (e: any) {

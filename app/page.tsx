@@ -529,7 +529,7 @@ function HomeContent() {
         <Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 4 }}>
             {/* Left Column: Chart & Profile */}
-            <Box>
+            <Box sx={{ order: { xs: 2, md: 1 } }}>
               <div className="glass-card">
                 <Stack direction="row" justifyContent="space-between">
                   <Box>
@@ -659,7 +659,7 @@ function HomeContent() {
             </Box>
 
             {/* Right Column: Prediction & Reasoning */}
-            <Box>
+            <Box sx={{ order: { xs: 1, md: 2 } }}>
               <Stack spacing={3}>
                 <AIPredictionCard prediction={prediction} />
               </Stack>

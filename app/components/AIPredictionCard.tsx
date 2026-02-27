@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box, Typography, Stack, Chip } from '@mui/material';
-import { LampCharge, TrendUp, TrendDown, Minus } from 'iconsax-react';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, Stack, Chip, Button, Collapse } from '@mui/material';
+import { LampCharge, TrendUp, TrendDown, Minus, ArrowDown2, ArrowUp2 } from 'iconsax-react';
 import { PredictionResult } from '../utils/prediction';
 
 interface AIPredictionCardProps {
@@ -14,11 +14,32 @@ const SignalIcon = ({ signal }: { signal: 'positive' | 'negative' | 'neutral' })
 };
 
 const AIPredictionCard: React.FC<AIPredictionCardProps> = ({ prediction }) => {
+    const [expanded, setExpanded] = useState(true);
+
+    useEffect(() => {
+        // Close by default on mobile (tablet breakpoint 900px)
+        if (typeof window !== 'undefined' && window.innerWidth < 900) {
+            setExpanded(false);
+        }
+    }, []);
+
     return (
         <div className="glass-card" style={{ height: '100%', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
-                <LampCharge size="24" color="#fbbf24" variant="Bulk" />
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>TECHNICAL FORECAST</Typography>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3, justifyContent: 'space-between' }}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                    <LampCharge size="24" color="#fbbf24" variant="Bulk" />
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>TECHNICAL FORECAST</Typography>
+                </Stack>
+                {prediction && (
+                    <Box sx={{ display: { xs: 'block', md: 'none' }, textAlign: 'right' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main', display: 'block', lineHeight: 1 }}>
+                            {prediction.symbol}
+                        </Typography>
+                        <Typography variant="subtitle2" className="font-mono" sx={{ fontWeight: 800 }}>
+                            ${prediction.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </Typography>
+                    </Box>
+                )}
             </Stack>
 
             <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', p: 3, borderRadius: 3, mb: 3 }}>
@@ -33,7 +54,7 @@ const AIPredictionCard: React.FC<AIPredictionCardProps> = ({ prediction }) => {
                                 color={prediction.trend === 'UP' ? '#4ade80' : prediction.trend === 'DOWN' ? '#f87171' : '#94a3b8'}
                                 sx={{
                                     fontWeight: 900,
-                                    fontSize: { xs: '1.75rem', sm: '2.125rem' }
+                                    fontSize: { xs: '1.5rem', sm: '2rem' }
                                 }}
                             >
                                 {prediction.trend === 'UP' ? 'Bullish 🚀' : prediction.trend === 'DOWN' ? 'Bearish ⚠️' : 'Neutral ➖'}
@@ -61,11 +82,24 @@ const AIPredictionCard: React.FC<AIPredictionCardProps> = ({ prediction }) => {
                             </Typography>
                         </Box>
 
-                        <Typography variant="body1" sx={{ mt: 2, color: 'text.secondary' }}>
-                            ราคาเป้าหมายในรอบนี้: <Typography component="span" className="font-mono" sx={{ fontWeight: 700, color: 'primary.main', fontSize: '1.2rem' }}>
-                                ${typeof prediction.target === 'string' ? parseFloat(prediction.target).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : prediction.target}
-                            </Typography>
-                        </Typography>
+                        <Stack spacing={1} sx={{ mt: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    ราคาคาดการณ์ (พรุ่งนี้):
+                                </Typography>
+                                <Typography className="font-mono" sx={{ fontWeight: 700, color: 'primary.main', fontSize: '1.1rem' }}>
+                                    ${typeof prediction.targetNextDay === 'string' ? parseFloat(prediction.targetNextDay).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : prediction.targetNextDay}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    เป้าหมาย {prediction.days} วัน:
+                                </Typography>
+                                <Typography className="font-mono" sx={{ fontWeight: 800, color: '#38bdf8', fontSize: '1.2rem' }}>
+                                    ${typeof prediction.target === 'string' ? parseFloat(prediction.target).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : prediction.target}
+                                </Typography>
+                            </Box>
+                        </Stack>
                     </>
                 )}
             </Box>
@@ -73,62 +107,80 @@ const AIPredictionCard: React.FC<AIPredictionCardProps> = ({ prediction }) => {
             {/* Reasoning Points */}
             {prediction && prediction.reasoningPoints.length > 0 && (
                 <Box sx={{ mb: 3 }}>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 800, color: '#fbbf24', letterSpacing: 1, textTransform: 'uppercase' }}>
-                            เหตุผลในการวิเคราะห์
-                        </Typography>
-                        <Chip
-                            label={`${prediction.reasoningPoints.length} ปัจจัย`}
-                            size="small"
-                            sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(251,191,36,0.1)', color: '#fbbf24', fontWeight: 700 }}
-                        />
+                    <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        sx={{
+                            mb: 1.5,
+                            cursor: 'pointer',
+                            '&:hover': { opacity: 0.8 }
+                        }}
+                        onClick={() => setExpanded(!expanded)}
+                    >
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: '#fbbf24', letterSpacing: 1, textTransform: 'uppercase' }}>
+                                เหตุผลในการวิเคราะห์
+                            </Typography>
+                            <Chip
+                                label={`${prediction.reasoningPoints.length} ปัจจัย`}
+                                size="small"
+                                sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(251,191,36,0.1)', color: '#fbbf24', fontWeight: 700 }}
+                            />
+                        </Stack>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            {expanded ? <ArrowUp2 size="16" color="#fbbf24" /> : <ArrowDown2 size="16" color="#fbbf24" />}
+                        </Box>
                     </Stack>
-                    <Stack spacing={1}>
-                        {prediction.reasoningPoints.map((point, i) => (
-                            <Box
-                                key={i}
-                                sx={{
-                                    display: 'flex',
-                                    gap: 1.5,
-                                    alignItems: 'flex-start',
-                                    p: 1.5,
-                                    borderRadius: 2,
-                                    bgcolor: point.signal === 'positive'
-                                        ? 'rgba(74, 222, 128, 0.04)'
-                                        : point.signal === 'negative'
-                                            ? 'rgba(248, 113, 113, 0.04)'
-                                            : 'rgba(255,255,255,0.02)',
-                                    border: '1px solid',
-                                    borderColor: point.signal === 'positive'
-                                        ? 'rgba(74, 222, 128, 0.12)'
-                                        : point.signal === 'negative'
-                                            ? 'rgba(248, 113, 113, 0.12)'
-                                            : 'rgba(255,255,255,0.06)',
-                                    transition: 'all 0.2s',
-                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' }
-                                }}
-                            >
-                                <Box sx={{ mt: 0.3, flexShrink: 0 }}>
-                                    <SignalIcon signal={point.signal} />
+
+                    <Collapse in={expanded}>
+                        <Stack spacing={1}>
+                            {prediction.reasoningPoints.map((point, i) => (
+                                <Box
+                                    key={i}
+                                    sx={{
+                                        display: 'flex',
+                                        gap: 1.5,
+                                        alignItems: 'flex-start',
+                                        p: 1.5,
+                                        borderRadius: 2,
+                                        bgcolor: point.signal === 'positive'
+                                            ? 'rgba(74, 222, 128, 0.04)'
+                                            : point.signal === 'negative'
+                                                ? 'rgba(248, 113, 113, 0.04)'
+                                                : 'rgba(255,255,255,0.02)',
+                                        border: '1px solid',
+                                        borderColor: point.signal === 'positive'
+                                            ? 'rgba(74, 222, 128, 0.12)'
+                                            : point.signal === 'negative'
+                                                ? 'rgba(248, 113, 113, 0.12)'
+                                                : 'rgba(255,255,255,0.06)',
+                                        transition: 'all 0.2s',
+                                        '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' }
+                                    }}
+                                >
+                                    <Box sx={{ mt: 0.3, flexShrink: 0 }}>
+                                        <SignalIcon signal={point.signal} />
+                                    </Box>
+                                    <Box sx={{ flex: 1 }}>
+                                        <Typography variant="caption" sx={{
+                                            fontWeight: 800,
+                                            color: point.signal === 'positive' ? '#4ade80' : point.signal === 'negative' ? '#f87171' : '#94a3b8',
+                                            display: 'block',
+                                            mb: 0.2,
+                                            fontSize: '0.68rem',
+                                            letterSpacing: 0.5
+                                        }}>
+                                            {point.label}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.5, fontSize: '0.72rem' }}>
+                                            {point.value}
+                                        </Typography>
+                                    </Box>
                                 </Box>
-                                <Box sx={{ flex: 1 }}>
-                                    <Typography variant="caption" sx={{
-                                        fontWeight: 800,
-                                        color: point.signal === 'positive' ? '#4ade80' : point.signal === 'negative' ? '#f87171' : '#94a3b8',
-                                        display: 'block',
-                                        mb: 0.2,
-                                        fontSize: '0.68rem',
-                                        letterSpacing: 0.5
-                                    }}>
-                                        {point.label}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.5, fontSize: '0.72rem' }}>
-                                        {point.value}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        ))}
-                    </Stack>
+                            ))}
+                        </Stack>
+                    </Collapse>
                 </Box>
             )}
 
