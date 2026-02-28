@@ -24,7 +24,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'จงก้าวไปข้างหน้าด้วยความระมัดระวัง ใช้จำนวนเงินน้อยๆ เพื่อทดสอบตลาดก่อนจะทุ่มหมดหน้าตัก',
         icon: 'Sun',
         color: '#38bdf8',
-        image: '/images/t0.png'
+        image: '/images/t0.webp'
     },
     {
         id: '1-the-magician',
@@ -37,7 +37,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'จงรวมรวบสมาธิและใช้ทักษะที่คุณมีตัดสินใจอย่างเด็ดขาด ความสำเร็จรออยู่เพียงแค่คุณลงมือทำ',
         icon: 'Magicpen',
         color: '#a78bfa',
-        image: '/images/t1.png'
+        image: '/images/t1.webp'
     },
     {
         id: '2-the-high-priestess',
@@ -50,7 +50,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'จงนิ่งสยบความเคลื่อนไหว ใช้ความนิ่งและสติสังเกตการณ์จนกว่าความจริงจะปรากฏชัดเจน',
         icon: 'Moon',
         color: '#fbbf24',
-        image: '/images/t2.png'
+        image: '/images/t2.webp'
     },
     {
         id: '3-the-empress',
@@ -63,7 +63,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'จงเก็บเกี่ยวผลกำไรอย่างเป็นระบบ และดูแลรักษาเงินทุนให้เติบโตอย่างยั่งยืนเหมือนการปลูกต้นไม้',
         icon: 'Heart',
         color: '#f472b6',
-        image: '/images/t3.png'
+        image: '/images/t3.webp'
     },
     {
         id: '4-the-emperor',
@@ -76,7 +76,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'วางโครงสร้างการเทรดให้ชัดเจน กำหนดจุด Risk/Reward ที่แน่นอน และห้ามแหกกฎเด็ดขาด',
         icon: 'Hierarchy',
         color: '#ef4444',
-        image: '/images/t4.png'
+        image: '/images/t4.webp'
     },
     {
         id: '5-the-hierophant',
@@ -89,7 +89,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'ใช้หลักการที่ผ่านการพิสูจน์มาแล้วเป็นที่ตั้ง (Proven Strategy) อย่ามโนหรือลองวิชาเสี่ยงๆ ในตอนนี้',
         icon: 'Hierarchy',
         color: '#6366f1',
-        image: '/images/t5.png'
+        image: '/images/t5.webp'
     },
     {
         id: '6-the-lovers',
@@ -102,7 +102,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'ฟังทั้งเสียงจากหัวใจ (Inner feeling) และข้อมูลจากกราฟ หาจุดสมดุลให้ได้ก่อนจะตัดสินใจเลือกทางใดทางหนึ่ง',
         icon: 'Heart',
         color: '#ec4899',
-        image: '/images/t6.png'
+        image: '/images/t6.webp'
     },
     {
         id: '7-the-chariot',
@@ -115,7 +115,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'รักษาสมาธิและคุมบังเหียนของพอร์ตให้มั่นคง อย่าเปลี่ยนแผนกลางคันถ้ายังไม่ถึงจุดหมายที่วางไว้',
         icon: 'Flash',
         color: '#3b82f6',
-        image: '/images/t7.png'
+        image: '/images/t7.webp'
     },
     {
         id: '8-strength',
@@ -128,7 +128,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'สยบตลาดด้วยความนิ่ง ใช้สติคุมสัญชาตญาณสัตว์ป่าในตัวคุณให้ได้ ชัยชนะจะเป็นของผู้ที่ใจเย็นที่สุด',
         icon: 'Sun',
         color: '#fb923c',
-        image: '/images/t8.png'
+        image: '/images/t8.webp'
     },
     {
         id: '9-the-hermit',
@@ -141,7 +141,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'หยุดแสวงหาคำตอบจากแหล่งข่าวภายนอก กลับมาทบทวนบันทึกการเทรด (Trading Journal) ของตัวเองเพื่อหาจุดบกพร่อง',
         icon: 'Moon',
         color: '#94a3b8',
-        image: '/images/t9.png'
+        image: '/images/t9.webp'
     },
     {
         id: '10-wheel-of-fortune',
@@ -154,7 +154,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'ปรับตัวให้เข้ากับจังหวะของตลาด (Go with the flow) อย่าฝืนกระแสลม และจงเตรียมแผนรับมือตอนที่กงล้อหมุนลง',
         icon: 'Refresh2',
         color: '#10b981',
-        image: '/images/t10.png'
+        image: '/images/t10.webp'
     },
     {
         id: '11-justice',
@@ -167,7 +167,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'ทำในสิ่งที่ถูกต้องตามหลักการ ตัดสินใจด้วยความเที่ยงธรรม แล้วตลาดจะตอบแทนคุณอย่างเหมาะสมที่สุด',
         icon: 'Hierarchy',
         color: '#22c55e',
-        image: '/images/t11.png'
+        image: '/images/t11.webp'
     },
     {
         id: '12-the-hanged-man',
@@ -180,7 +180,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'ลองกลับหัวคิดดูใหม่ สิ่งที่คุณคิดว่าน่ากลัวอาจจะเป็นโอกาสที่ยิ่งใหญ่ หากคุณทนความเจ็บปวดจากการรอคอยได้',
         icon: 'Refresh2',
         color: '#38bdf8',
-        image: '/images/t12.png'
+        image: '/images/t12.webp'
     },
     {
         id: '13-death',
@@ -193,7 +193,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'ยอมตัดใจจากสิ่งที่ไม่ใช่ (Cut Loss) เมื่อสิ่งเก่าหายไป พื้นที่ว่างจะถูกเติมเต็มด้วยโอกาสที่ดีกว่าเดิมเสมอ',
         icon: 'CloseCircle',
         color: '#475569',
-        image: '/images/t13.png'
+        image: '/images/t13.webp'
     },
     {
         id: '14-temperance',
@@ -206,7 +206,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'ผสานความรู้จากหลายๆ แหล่งและปรับขนาดไม้ให้พอดี (Position Sizing) ทางสายกลางคือทางแห่งผลกำไร',
         icon: 'Magicpen',
         color: '#a78bfa',
-        image: '/images/t14.png'
+        image: '/images/t14.webp'
     },
     {
         id: '15-the-devil',
@@ -219,7 +219,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'รู้เท่าทันอารมณ์ด้านมืดของตัวเอง หยุดเทรดทันทีและดึงตัวเองออกมาจากหน้าจอก่อนจะสูญเสียไปมากกว่านี้',
         icon: 'Flash',
         color: '#b91c1c',
-        image: '/images/t15.png'
+        image: '/images/t15.webp'
     },
     {
         id: '16-the-tower',
@@ -232,7 +232,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'ปล่อยให้สิ่งที่จะพังได้พังไป สนใจเพียงการรักษาชีวิตและเงินทุนที่เหลือไว้ โอกาสใหม่จะเกิดขึ้นหลังฝุ่นตลบจบลง',
         icon: 'Flash',
         color: '#f59e0b',
-        image: '/images/t16.png'
+        image: '/images/t16.webp'
     },
     {
         id: '17-the-star',
@@ -245,7 +245,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'จงกล้าที่จะหวังและวางแผนระยะยาว พักใจจากความเจ็บช้ำในอดีตและมองไปที่เป้าหมายที่อยู่ไกลกว่าเดิม',
         icon: 'Star',
         color: '#60a5fa',
-        image: '/images/t17.png'
+        image: '/images/t17.webp'
     },
     {
         id: '18-the-moon',
@@ -258,7 +258,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'เชื่อในสิ่งที่เห็น ไม่ใช่สิ่งที่ "คิดว่าจะเป็น" รอดูสัญญาณที่ชัดเจนในระดับ Timeframe ที่ใหญ่ขึ้นเพื่อความชัวร์',
         icon: 'Moon',
         color: '#94a3b8',
-        image: '/images/t18.png'
+        image: '/images/t18.webp'
     },
     {
         id: '19-the-sun',
@@ -271,7 +271,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'จงมีความสุขกับความสำเร็จ แต่ให้รักษาวินัยไว้อย่างเคร่งครัดเหมือนตอนที่คุณยังไม่มีอะไร',
         icon: 'Sun',
         color: '#fbbf24',
-        image: '/images/t19.png'
+        image: '/images/t19.webp'
     },
     {
         id: '20-judgement',
@@ -284,7 +284,7 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'จงนำบทเรียนในอดีตมาใช้ ตัดสินใจครั้งสุดท้ายด้วยความจริงใจต่อตัวเอง แล้วคุณจะพบหนทางที่ถูกต้อง',
         icon: 'Flash',
         color: '#8b5cf6',
-        image: '/images/t20.png'
+        image: '/images/t20.webp'
     },
     {
         id: '21-the-world',
@@ -297,6 +297,6 @@ export const TAROT_CARDS: TarotCard[] = [
         adviceTh: 'จงปิดรอบการทำกำไร (Close position) พักผ่อนและฉลองความสำเร็จ ก่อนจะเริ่มต้นก้าวใหม่ที่ใหญ่กว่าเดิม',
         icon: 'Global',
         color: '#10b981',
-        image: '/images/t21.png'
+        image: '/images/t21.webp'
     }
 ];

@@ -260,7 +260,7 @@ export default function ProphecyPage() {
                                     width: '100%', height: '100%',
                                     borderRadius: 1,
                                     border: '1.5px solid rgba(245, 158, 11, 0.4)',
-                                    backgroundImage: 'url(/images/back0.png)',
+                                    backgroundImage: 'url(/images/back0.webp)',
                                     backgroundSize: '100% 100%',
                                     backgroundPosition: 'center',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -338,7 +338,7 @@ export default function ProphecyPage() {
                                             {hasCard ? (
                                                 <Box sx={{
                                                     width: '100%', height: '100%',
-                                                    backgroundImage: 'url(/images/back0.png)',
+                                                    backgroundImage: 'url(/images/back0.webp)',
                                                     backgroundSize: '100% 100%',
                                                     backgroundPosition: 'center',
                                                     position: 'relative'
@@ -409,7 +409,7 @@ export default function ProphecyPage() {
                                                 height: { xs: 130, sm: 165, md: 210 },
                                                 borderRadius: 1.5,
                                                 border: '1px solid rgba(255,255,255,0.15)',
-                                                backgroundImage: 'url(/images/back0.png)',
+                                                backgroundImage: 'url(/images/back0.webp)',
                                                 backgroundSize: '100% 100%',
                                                 backgroundPosition: 'center',
                                                 cursor: 'pointer',
@@ -501,7 +501,7 @@ export default function ProphecyPage() {
                                                     <Box sx={{
                                                         position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden',
                                                         borderRadius: 1.5, border: '3px solid rgba(245, 158, 11, 0.3)',
-                                                        backgroundImage: 'url(/images/back0.png)',
+                                                        backgroundImage: 'url(/images/back0.webp)',
                                                         backgroundSize: '100% 100%',
                                                         backgroundPosition: 'center',
                                                         overflow: 'hidden',
