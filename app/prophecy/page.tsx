@@ -251,30 +251,39 @@ export default function ProphecyPage() {
                 )}
 
                 {gameState === 'shuffling' && (
-                    <Box sx={{ position: 'relative', height: 300, width: 200 }}>
+                    <Box sx={{ position: 'relative', height: 210, width: 125 }}>
                         {[1, 2, 3, 4, 5, 6].map((i) => (
                             <Box
                                 key={i}
                                 sx={{
                                     position: 'absolute',
                                     width: '100%', height: '100%',
-                                    borderRadius: 4,
-                                    border: '2px solid rgba(255,255,255,0.1)',
-                                    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                                    borderRadius: 1,
+                                    border: '1.5px solid rgba(245, 158, 11, 0.4)',
+                                    backgroundImage: 'url(/images/back0.png)',
+                                    backgroundSize: '100% 100%',
+                                    backgroundPosition: 'center',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                                    animation: `shuffle 2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite`,
+                                    boxShadow: '0 10px 40px rgba(0,0,0,0.6), 0 0 20px rgba(245, 158, 11, 0.2)',
+                                    animation: `shuffle 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite`,
                                     animationDelay: `${i * 0.15}s`,
                                     '@keyframes shuffle': {
                                         '0%': { transform: 'translate(0, 0) rotate(0deg)' },
-                                        '25%': { transform: `translate(${i % 2 === 0 ? 80 : -80}px, ${i * 10}px) rotate(${i * 8}deg)` },
+                                        '25%': { transform: `translate(${i % 2 === 0 ? 90 : -90}px, ${i * 8}px) rotate(${i * 12}deg)` },
                                         '50%': { transform: 'translate(0, 0) rotate(0deg)' },
-                                        '75%': { transform: `translate(${i % 2 === 0 ? -80 : 80}px, ${-i * 10}px) rotate(${-i * 8}deg)` },
+                                        '75%': { transform: `translate(${i % 2 === 0 ? -90 : 90}px, ${-i * 8}px) rotate(${-i * 12}deg)` },
                                         '100%': { transform: 'translate(0, 0) rotate(0deg)' },
                                     }
                                 }}
                             >
-                                <Magicpen size={64} color="#a78bfa" opacity={0.1} />
+                                <Box sx={{
+                                    width: '100%', height: '100%',
+                                    borderRadius: 'inherit',
+                                    bgcolor: 'rgba(15, 23, 42, 0.3)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <Magicpen size={48} color="#f59e0b" variant="Bulk" style={{ opacity: 0.5, filter: 'drop-shadow(0 0 10px rgba(245, 158, 11, 0.3))' }} />
+                                </Box>
                             </Box>
                         ))}
                     </Box>
@@ -283,11 +292,85 @@ export default function ProphecyPage() {
                 {gameState === 'selecting' && (
                     <Box sx={{ textAlign: 'center', width: '100%', position: 'relative' }}>
                         <Box sx={{ mb: 4 }}>
-                            <Typography variant="h6" sx={{ color: '#a78bfa', mb: 1, fontWeight: 700 }}>
+                            <Typography variant="h5" sx={{ color: '#f59e0b', mb: 2, fontWeight: 800, letterSpacing: 1 }}>
                                 เลือกไพ่ทีละใบจนครบ 3 ใบ
                             </Typography>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                เลือกไปแล้ว: <span style={{ color: '#0ea5e9', fontWeight: 800 }}>{selectedIndices.length} / 3</span>
+
+                            {/* Hand Area for Selected Cards */}
+                            <Stack
+                                direction="row"
+                                spacing={{ xs: 1.5, md: 3 }}
+                                justifyContent="center"
+                                sx={{ mt: 4, mb: 4, minHeight: { xs: 110, md: 160 } }}
+                            >
+                                {[0, 1, 2].map((slotIdx) => {
+                                    const cardIdx = selectedIndices[slotIdx];
+                                    const hasCard = cardIdx !== undefined;
+                                    return (
+                                        <Box
+                                            key={slotIdx}
+                                            onClick={() => hasCard && handleCardToggle(cardIdx)}
+                                            sx={{
+                                                width: { xs: 80, md: 120 },
+                                                height: { xs: 125, md: 185 },
+                                                borderRadius: 1,
+                                                border: hasCard ? '2px solid #f59e0b' : '1px dashed rgba(245, 158, 11, 0.3)',
+                                                bgcolor: 'rgba(15, 23, 42, 0.4)',
+                                                position: 'relative',
+                                                cursor: hasCard ? 'pointer' : 'default',
+                                                transition: 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                                transform: hasCard ? 'translateY(0) scale(1)' : 'scale(0.95)',
+                                                boxShadow: hasCard ? '0 0 30px rgba(245, 158, 11, 0.4)' : 'inset 0 0 15px rgba(0,0,0,0.5)',
+                                                '&:hover': hasCard ? {
+                                                    transform: 'translateY(-12px) scale(1.08)',
+                                                    borderColor: '#fbbf24',
+                                                    boxShadow: '0 20px 45px rgba(245, 158, 11, 0.6)',
+                                                } : {},
+                                                overflow: 'hidden',
+                                                '&::after': !hasCard ? {
+                                                    content: '""',
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    background: 'radial-gradient(circle, rgba(245, 158, 11, 0.05) 0%, transparent 70%)',
+                                                } : {}
+                                            }}
+                                        >
+                                            {hasCard ? (
+                                                <Box sx={{
+                                                    width: '100%', height: '100%',
+                                                    backgroundImage: 'url(/images/back0.png)',
+                                                    backgroundSize: '100% 100%',
+                                                    backgroundPosition: 'center',
+                                                    position: 'relative'
+                                                }}>
+                                                    <Box sx={{
+                                                        position: 'absolute', top: 6, right: 6,
+                                                        width: 22, height: 22, borderRadius: '50%',
+                                                        bgcolor: '#f59e0b', color: '#0f172a',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.8rem', fontWeight: 900,
+                                                        border: '2px solid #0f172a',
+                                                        boxShadow: '0 0 10px rgba(0,0,0,0.5)'
+                                                    }}>
+                                                        {slotIdx + 1}
+                                                    </Box>
+                                                </Box>
+                                            ) : (
+                                                <Box sx={{
+                                                    width: '100%', height: '100%',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    opacity: 0.15
+                                                }}>
+                                                    <Typography variant="h4" sx={{ fontWeight: 900, color: '#f59e0b' }}>{slotIdx + 1}</Typography>
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    );
+                                })}
+                            </Stack>
+
+                            <Typography variant="subtitle1" sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                                เลือกไปแล้ว: <span style={{ color: '#f59e0b', fontWeight: 900 }}>{selectedIndices.length} / 3</span>
                             </Typography>
                         </Box>
 
@@ -295,12 +378,12 @@ export default function ProphecyPage() {
                             display: 'flex',
                             justifyContent: 'center',
                             flexWrap: 'wrap',
-                            gap: { xs: 0.5, md: -10 },
+                            gap: { xs: 1, md: -12 },
                             px: { xs: 2, md: 6 },
                             perspective: '1000px',
-                            maxWidth: 1400,
+                            maxWidth: 1600,
                             mx: 'auto',
-                            minHeight: 350,
+                            minHeight: { xs: 240, md: 300 },
                             alignItems: 'center'
                         }}>
                             {[...Array(22)].map((_, i) => {
@@ -310,70 +393,37 @@ export default function ProphecyPage() {
                                         key={i}
                                         sx={{
                                             position: 'relative',
-                                            marginLeft: { xs: 0, md: i === 0 ? 0 : -9 },
-                                            marginBottom: { xs: 1, md: 0 },
-                                            zIndex: isSelected ? 110 : 1,
-                                            animation: !isSelected ? 'float 6s ease-in-out infinite' : 'none',
-                                            animationDelay: `${i * 0.1}s`,
-                                            '@keyframes float': {
-                                                '0%, 100%': { transform: 'translateY(0)' },
-                                                '50%': { transform: 'translateY(-12px)' }
-                                            },
-                                            transition: 'z-index 0.3s'
+                                            marginLeft: { xs: 0, md: i === 0 ? 0 : -10 },
+                                            marginBottom: { xs: 1.5, md: 0 },
+                                            zIndex: isSelected ? 0 : (10 + i),
+                                            transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                            opacity: isSelected ? 0 : 1,
+                                            transform: isSelected ? 'translateY(-150px) scale(0)' : 'translateY(0) scale(1)',
+                                            pointerEvents: isSelected ? 'none' : 'auto',
                                         }}
                                     >
                                         <Box
-                                            onClick={() => handleCardToggle(i)}
+                                            onClick={() => !isSelected && handleCardToggle(i)}
                                             sx={{
-                                                width: { xs: 70, sm: 90, md: 130 },
-                                                height: { xs: 110, sm: 140, md: 200 },
-                                                borderRadius: 1,
-                                                border: isSelected ? '2px solid #0ea5e9' : '1px solid rgba(255,255,255,0.08)',
-                                                background: isSelected
-                                                    ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
-                                                    : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                                                width: { xs: 80, sm: 100, md: 125 },
+                                                height: { xs: 130, sm: 165, md: 210 },
+                                                borderRadius: 1.5,
+                                                border: '1px solid rgba(255,255,255,0.15)',
+                                                backgroundImage: 'url(/images/back0.png)',
+                                                backgroundSize: '100% 100%',
+                                                backgroundPosition: 'center',
                                                 cursor: 'pointer',
-                                                transition: 'transform 1s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.8s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease',
-                                                willChange: 'transform',
-                                                transform: isSelected
-                                                    ? 'translateY(-140px) scale(1.05)'
-                                                    : 'translateY(0) scale(1)',
+                                                transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
                                                 '&:hover': {
-                                                    transform: isSelected
-                                                        ? 'translateY(-150px) scale(1.08)'
-                                                        : 'translateY(-40px) scale(1.02)',
-                                                    zIndex: 120,
-                                                    borderColor: '#0ea5e9',
-                                                    boxShadow: '0 25px 60px rgba(14, 165, 233, 0.35)',
+                                                    transform: 'translateY(-40px) scale(1.05)',
+                                                    zIndex: 250,
+                                                    borderColor: '#f59e0b',
+                                                    boxShadow: '0 20px 45px rgba(245, 158, 11, 0.45)',
                                                 },
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                boxShadow: isSelected
-                                                    ? '0 30px 70px rgba(0,0,0,0.6)'
-                                                    : '-5px 0 15px rgba(0,0,0,0.2)',
+                                                boxShadow: '-2px 0 10px rgba(0,0,0,0.3)',
                                             }}
-                                        >
-                                            <Magicpen
-                                                size={32}
-                                                color={isSelected ? "#0ea5e9" : "#0ea5e9"}
-                                                opacity={isSelected ? 1 : 0.15}
-                                            />
-                                            {isSelected && (
-                                                <Fade in timeout={800}>
-                                                    <Box sx={{
-                                                        position: 'absolute', top: -14, right: -14,
-                                                        width: 30, height: 30, borderRadius: '50%',
-                                                        bgcolor: '#0ea5e9', color: 'white',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        fontSize: '0.9rem', fontWeight: 900,
-                                                        boxShadow: '0 0 20px rgba(14, 165, 233, 0.7)',
-                                                        border: '2.5px solid #0f172a',
-                                                        zIndex: 5
-                                                    }}>
-                                                        {selectedIndices.indexOf(i) + 1}
-                                                    </Box>
-                                                </Fade>
-                                            )}
-                                        </Box>
+                                        />
                                     </Box>
                                 );
                             })}
@@ -386,19 +436,19 @@ export default function ProphecyPage() {
                                         variant="contained"
                                         onClick={revealFate}
                                         size="large"
-                                        startIcon={<Global variant="Outline" color="#0ea5e9" />}
+                                        startIcon={<Global variant="Outline" color="#f59e0b" />}
                                         sx={{
                                             borderRadius: 10,
                                             px: 8, py: 2,
                                             fontSize: '1.2rem',
                                             fontWeight: 800,
-                                            background: 'linear-gradient(135deg, #0ea5e9 0%, #7c3aed 100%)',
-                                            boxShadow: '0 10px 40px rgba(14, 165, 233, 0.4)',
+                                            background: 'linear-gradient(135deg, #f59e0b 0%, #7c3aed 100%)',
+                                            boxShadow: '0 10px 40px rgba(245, 158, 11, 0.3)',
                                             animation: 'pulse 2s infinite',
                                             '@keyframes pulse': {
-                                                '0%': { transform: 'scale(1)', boxShadow: '0 10px 40px rgba(14, 165, 233, 0.4)' },
-                                                '50%': { transform: 'scale(1.05)', boxShadow: '0 15px 50px rgba(14, 165, 233, 0.6)' },
-                                                '100%': { transform: 'scale(1)', boxShadow: '0 10px 40px rgba(14, 165, 233, 0.4)' }
+                                                '0%': { transform: 'scale(1)', boxShadow: '0 10px 40px rgba(245, 158, 11, 0.3)' },
+                                                '50%': { transform: 'scale(1.05)', boxShadow: '0 15px 50px rgba(245, 158, 11, 0.5)' },
+                                                '100%': { transform: 'scale(1)', boxShadow: '0 10px 40px rgba(245, 158, 11, 0.3)' }
                                             }
                                         }}
                                     >
@@ -423,57 +473,93 @@ export default function ProphecyPage() {
                                     <Fade in timeout={500 + (index * 500)}>
                                         <Box>
                                             <Box sx={{ mb: 2, textAlign: 'center' }}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 900, color: 'white', textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 900, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: 2, mb: 1 }}>
                                                     {slot.title}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>
                                                     {slot.description}
                                                 </Typography>
                                             </Box>
 
                                             {/* Card Flip Container */}
                                             <Box sx={{
-                                                perspective: '1000px',
+                                                perspective: '2000px',
                                                 width: '100%',
                                                 maxWidth: 240,
-                                                height: 360,
+                                                height: 380,
                                                 mx: 'auto',
-                                                mb: 3
+                                                mb: 4,
+                                                filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.5))'
                                             }}>
                                                 <Box sx={{
                                                     position: 'relative', width: '100%', height: '100%',
-                                                    textAlign: 'center', transition: 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                                    textAlign: 'center', transition: 'transform 1.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
                                                     transformStyle: 'preserve-3d',
                                                     transform: slot.isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
                                                 }}>
                                                     {/* Back */}
                                                     <Box sx={{
                                                         position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden',
-                                                        borderRadius: 2, border: '2px solid rgba(255,255,255,0.08)',
-                                                        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                        borderRadius: 1.5, border: '3px solid rgba(245, 158, 11, 0.3)',
+                                                        backgroundImage: 'url(/images/back0.png)',
+                                                        backgroundSize: '100% 100%',
+                                                        backgroundPosition: 'center',
+                                                        overflow: 'hidden',
+                                                        boxShadow: 'inset 0 0 100px rgba(0,0,0,0.4)'
                                                     }}>
-                                                        <Magicpen size={64} color="#a78bfa" opacity={0.15} />
+                                                        <Box sx={{
+                                                            width: '100%', height: '100%',
+                                                            bgcolor: 'rgba(15, 23, 42, 0.4)',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                        }}>
+                                                            <Magicpen size={80} color="#f59e0b" variant="Bulk" style={{ opacity: 0.6, filter: 'drop-shadow(0 0 15px rgba(245, 158, 11, 0.4))' }} />
+                                                        </Box>
                                                     </Box>
 
                                                     {/* Front */}
                                                     <Box sx={{
                                                         position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden',
-                                                        borderRadius: 2, border: `3px solid ${slot.card?.color || 'white'}`,
-                                                        background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)',
-                                                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                                        transform: 'rotateY(180deg)', p: 2,
-                                                        boxShadow: `0 0 30px ${slot.card?.color}33`
+                                                        borderRadius: 1.5,
+                                                        border: `4px solid ${slot.card?.color || '#f59e0b'}`,
+                                                        background: slot.card?.image
+                                                            ? `url(${slot.card.image}) center/100% 100% no-repeat`
+                                                            : 'rgba(15, 23, 42, 0.95)',
+                                                        backdropFilter: 'blur(15px)',
+                                                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
+                                                        transform: 'rotateY(180deg)', p: 0,
+                                                        overflow: 'hidden',
+                                                        boxShadow: `0 0 40px ${slot.card?.color}55, inset 0 0 60px rgba(0,0,0,0.6)`
                                                     }}>
-                                                        <Box sx={{ p: 2, borderRadius: '50%', bgcolor: `${slot.card?.color}11`, mb: 2 }}>
-                                                            <CardIcon name={slot.card?.icon || ''} color={slot.card?.color || ''} size={42} />
+                                                        {/* Gold inner frame if image exists */}
+                                                        {slot.card?.image && (
+                                                            <Box sx={{
+                                                                position: 'absolute', inset: 6,
+                                                                border: '1px solid rgba(245, 158, 11, 0.4)',
+                                                                borderRadius: 1,
+                                                                pointerEvents: 'none',
+                                                                zIndex: 3
+                                                            }} />
+                                                        )}
+
+                                                        {/* Overlay for text readability if image exists */}
+
+
+                                                        <Box sx={{
+                                                            zIndex: 4,
+                                                            p: 2.5,
+                                                            textAlign: 'center',
+                                                            width: '100%',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'center'
+                                                        }}>
+                                                            {!slot.card?.image && (
+                                                                <Box sx={{ p: 2, borderRadius: '50%', bgcolor: `${slot.card?.color}11`, mb: 2 }}>
+                                                                    <CardIcon name={slot.card?.icon || ''} color={slot.card?.color || ''} size={42} />
+                                                                </Box>
+                                                            )}
+                                                            {/* Text removed to show artwork only */}
                                                         </Box>
-                                                        <Typography variant="h6" sx={{ fontWeight: 900, color: 'white', mb: 0.5, fontSize: '1.1rem' }}>
-                                                            {slot.card?.name}
-                                                        </Typography>
-                                                        <Typography variant="caption" sx={{ color: slot.card?.color, fontWeight: 800 }}>
-                                                            {slot.card?.nameTh.split(' - ')[0]}
-                                                        </Typography>
                                                     </Box>
                                                 </Box>
                                             </Box>

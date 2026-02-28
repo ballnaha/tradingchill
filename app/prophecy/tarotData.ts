@@ -9,6 +9,7 @@ export interface TarotCard {
     adviceTh?: string;     // แนวทางแก้ไข/คำแนะนำ
     icon: string;
     color: string;
+    image?: string;
 }
 
 export const TAROT_CARDS: TarotCard[] = [
@@ -22,7 +23,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'ระวังการเข้าเทรดโดยไม่มีแผนรองรับ (FOMO) หรือการมองข้ามสัญญาณเตือนเพราะความมั่นใจที่เกินเหตุ',
         adviceTh: 'จงก้าวไปข้างหน้าด้วยความระมัดระวัง ใช้จำนวนเงินน้อยๆ เพื่อทดสอบตลาดก่อนจะทุ่มหมดหน้าตัก',
         icon: 'Sun',
-        color: '#38bdf8'
+        color: '#38bdf8',
+        image: '/images/t0.png'
     },
     {
         id: '1-the-magician',
@@ -34,7 +36,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การมีความรู้มากเกินไปอาจทำให้คุณลังเล (Analysis Paralysis) หรือพยายามฝืนใช้เทคนิคที่ไม่เหมาะกับตลาดจริง',
         adviceTh: 'จงรวมรวบสมาธิและใช้ทักษะที่คุณมีตัดสินใจอย่างเด็ดขาด ความสำเร็จรออยู่เพียงแค่คุณลงมือทำ',
         icon: 'Magicpen',
-        color: '#a78bfa'
+        color: '#a78bfa',
+        image: '/images/t1.png'
     },
     {
         id: '2-the-high-priestess',
@@ -46,7 +49,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'ความสับสนว่าสิ่งที่รู้สึกคือ "สัญชาตญาณจริง" หรือเป็นเพียง "ความกลัว" ที่เราปรุงแต่งขึ้นมาเอง',
         adviceTh: 'จงนิ่งสยบความเคลื่อนไหว ใช้ความนิ่งและสติสังเกตการณ์จนกว่าความจริงจะปรากฏชัดเจน',
         icon: 'Moon',
-        color: '#fbbf24'
+        color: '#fbbf24',
+        image: '/images/t2.png'
     },
     {
         id: '3-the-empress',
@@ -58,7 +62,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'ระวังการ "ปล่อยเนื้อปล่อยตัว" ไปกับกำไรจนละเลยวินัย หรือการไม่กล้า Take Profit เมื่อถึงเวลา',
         adviceTh: 'จงเก็บเกี่ยวผลกำไรอย่างเป็นระบบ และดูแลรักษาเงินทุนให้เติบโตอย่างยั่งยืนเหมือนการปลูกต้นไม้',
         icon: 'Heart',
-        color: '#f472b6'
+        color: '#f472b6',
+        image: '/images/t3.png'
     },
     {
         id: '4-the-emperor',
@@ -70,7 +75,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'ความตึงเครียดหรือการยึดติดกับอีโก้ (Ego) จนไม่ยอมรับความผิดพลาดเมื่อวิเคราะห์ผิด',
         adviceTh: 'วางโครงสร้างการเทรดให้ชัดเจน กำหนดจุด Risk/Reward ที่แน่นอน และห้ามแหกกฎเด็ดขาด',
         icon: 'Hierarchy',
-        color: '#ef4444'
+        color: '#ef4444',
+        image: '/images/t4.png'
     },
     {
         id: '5-the-hierophant',
@@ -82,7 +88,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การเชื่อคำแนะนำของคนอื่นมากเกินไปจนลืมวิเคราะห์ด้วยตัวเอง หรือการจมปลักอยู่กับทฤษฎีที่ล้าสมัย',
         adviceTh: 'ใช้หลักการที่ผ่านการพิสูจน์มาแล้วเป็นที่ตั้ง (Proven Strategy) อย่ามโนหรือลองวิชาเสี่ยงๆ ในตอนนี้',
         icon: 'Hierarchy',
-        color: '#6366f1'
+        color: '#6366f1',
+        image: '/images/t5.png'
     },
     {
         id: '6-the-lovers',
@@ -94,7 +101,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การเลือกด้วย "แรงปรารถนา" มากกว่า "เหตุผล" หรือความลังเลที่ทำให้พลาดจังหวะการทำกำไรที่เหมาะสม',
         adviceTh: 'ฟังทั้งเสียงจากหัวใจ (Inner feeling) และข้อมูลจากกราฟ หาจุดสมดุลให้ได้ก่อนจะตัดสินใจเลือกทางใดทางหนึ่ง',
         icon: 'Heart',
-        color: '#ec4899'
+        color: '#ec4899',
+        image: '/images/t6.png'
     },
     {
         id: '7-the-chariot',
@@ -106,7 +114,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การคุมอารมณ์ที่พลุ่งพล่านไม่ได้ หรือการบุกตะลุยจนลืมเช็คว่า "น้ำมัน" (เงินทุน) ของคุณใกล้หมดหรือยัง',
         adviceTh: 'รักษาสมาธิและคุมบังเหียนของพอร์ตให้มั่นคง อย่าเปลี่ยนแผนกลางคันถ้ายังไม่ถึงจุดหมายที่วางไว้',
         icon: 'Flash',
-        color: '#3b82f6'
+        color: '#3b82f6',
+        image: '/images/t7.png'
     },
     {
         id: '8-strength',
@@ -118,7 +127,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การระเบิดอารมณ์ใส่ตลาด (Revenge Trading) เมื่อผลลัพธ์ไม่เป็นไปตามหวัง',
         adviceTh: 'สยบตลาดด้วยความนิ่ง ใช้สติคุมสัญชาตญาณสัตว์ป่าในตัวคุณให้ได้ ชัยชนะจะเป็นของผู้ที่ใจเย็นที่สุด',
         icon: 'Sun',
-        color: '#fb923c'
+        color: '#fb923c',
+        image: '/images/t8.png'
     },
     {
         id: '9-the-hermit',
@@ -130,19 +140,21 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'ความรู้สึกโดดเดี่ยวหรือความกลัวการตกรถเมื่อต้องแยกตัวออกมาดูสถานการณ์เพียงลำพัง',
         adviceTh: 'หยุดแสวงหาคำตอบจากแหล่งข่าวภายนอก กลับมาทบทวนบันทึกการเทรด (Trading Journal) ของตัวเองเพื่อหาจุดบกพร่อง',
         icon: 'Moon',
-        color: '#94a3b8'
+        color: '#94a3b8',
+        image: '/images/t9.png'
     },
     {
         id: '10-wheel-of-fortune',
         name: 'The Wheel of Fortune',
-        nameTh: 'X - กงล้อแห่งโชคชะตา',
+        nameTh: 'X - เดอะวีลออฟฟอร์จูน (กงล้อแห่งโชคชะตา)',
         traditionalMeaning: 'โชคชะตา จุดเปลี่ยน และวงจรชีวิต',
         tradingMeaning: 'ตลาดมีวงจรของมัน (Market Cycle) ขาขึ้นไม่ได้อยู่ตลอดไป และขาลงก็เช่นกัน เตรียมตัวรับมือกับการเปลี่ยนแปลงของเทรนด์ใหญ่',
         situationTh: 'โชคชะตาและวัฏจักรกำลังหมุนเวียน สิ่งที่เคยลงกำลังจะขึ้น หรือสิ่งที่เคยพุ่งแรงกำลังจะพักตัว',
         challengeTh: 'การพยายามฝืนวงจรตลาด (Trading against trend) หรือการคิดว่าโชคดีครั้งนี้จะอยู่กับเราตลอดไป',
         adviceTh: 'ปรับตัวให้เข้ากับจังหวะของตลาด (Go with the flow) อย่าฝืนกระแสลม และจงเตรียมแผนรับมือตอนที่กงล้อหมุนลง',
         icon: 'Refresh2',
-        color: '#10b981'
+        color: '#10b981',
+        image: '/images/t10.png'
     },
     {
         id: '11-justice',
@@ -154,7 +166,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การไม่ยอมรับความจริง (Denial) หรือพยายามเข้าข้างตัวเองเมื่อหลักฐานทางกราฟบ่งบอกเป็นอื่น',
         adviceTh: 'ทำในสิ่งที่ถูกต้องตามหลักการ ตัดสินใจด้วยความเที่ยงธรรม แล้วตลาดจะตอบแทนคุณอย่างเหมาะสมที่สุด',
         icon: 'Hierarchy',
-        color: '#22c55e'
+        color: '#22c55e',
+        image: '/images/t11.png'
     },
     {
         id: '12-the-hanged-man',
@@ -166,7 +179,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'ความทรมานจากการเฝ้ารอดูพอร์ตติดลบ หรือการไม่ยอมสละเงินบางส่วนเพื่อรักษาเกมส่วนใหญ่ไว้',
         adviceTh: 'ลองกลับหัวคิดดูใหม่ สิ่งที่คุณคิดว่าน่ากลัวอาจจะเป็นโอกาสที่ยิ่งใหญ่ หากคุณทนความเจ็บปวดจากการรอคอยได้',
         icon: 'Refresh2',
-        color: '#38bdf8'
+        color: '#38bdf8',
+        image: '/images/t12.png'
     },
     {
         id: '13-death',
@@ -178,7 +192,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'ความเสียดายที่รั้งคุณไว้กับอดีตที่ตายไปแล้ว หรือการกลัวการเริ่มต้นใหม่จากศูนย์',
         adviceTh: 'ยอมตัดใจจากสิ่งที่ไม่ใช่ (Cut Loss) เมื่อสิ่งเก่าหายไป พื้นที่ว่างจะถูกเติมเต็มด้วยโอกาสที่ดีกว่าเดิมเสมอ',
         icon: 'CloseCircle',
-        color: '#475569'
+        color: '#475569',
+        image: '/images/t13.png'
     },
     {
         id: '14-temperance',
@@ -190,7 +205,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การทำอะไรที่สุดโต่งเกินไป (Extreme bet) หรือการไม่ยอมประนีประนอมกับสถานการณ์ที่เปลี่ยนแปลง',
         adviceTh: 'ผสานความรู้จากหลายๆ แหล่งและปรับขนาดไม้ให้พอดี (Position Sizing) ทางสายกลางคือทางแห่งผลกำไร',
         icon: 'Magicpen',
-        color: '#a78bfa'
+        color: '#a78bfa',
+        image: '/images/t14.png'
     },
     {
         id: '15-the-devil',
@@ -202,7 +218,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การพนัน (Gambling) แทนการเทรด หรือการติดอยู่ในวังวนของการถัวขาลงจนหมดตัว',
         adviceTh: 'รู้เท่าทันอารมณ์ด้านมืดของตัวเอง หยุดเทรดทันทีและดึงตัวเองออกมาจากหน้าจอก่อนจะสูญเสียไปมากกว่านี้',
         icon: 'Flash',
-        color: '#b91c1c'
+        color: '#b91c1c',
+        image: '/images/t15.png'
     },
     {
         id: '16-the-tower',
@@ -214,7 +231,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การพยายามฝืนเอาไหล่ไปพยุงตึกที่กำลังจะถล่ม หรือการช็อกจนทำอะไรไม่ถูกเมื่อตลาดผันผวนรุนแรง',
         adviceTh: 'ปล่อยให้สิ่งที่จะพังได้พังไป สนใจเพียงการรักษาชีวิตและเงินทุนที่เหลือไว้ โอกาสใหม่จะเกิดขึ้นหลังฝุ่นตลบจบลง',
         icon: 'Flash',
-        color: '#f59e0b'
+        color: '#f59e0b',
+        image: '/images/t16.png'
     },
     {
         id: '17-the-star',
@@ -226,7 +244,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การมองโลกในแง่ดีจนเกินความจริง หรือความเฉื่อยชาที่ทำให้พลาดจังหวะการสะสมของที่ดี',
         adviceTh: 'จงกล้าที่จะหวังและวางแผนระยะยาว พักใจจากความเจ็บช้ำในอดีตและมองไปที่เป้าหมายที่อยู่ไกลกว่าเดิม',
         icon: 'Star',
-        color: '#60a5fa'
+        color: '#60a5fa',
+        image: '/images/t17.png'
     },
     {
         id: '18-the-moon',
@@ -238,7 +257,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การตกเป็นเหยื่อของข่าวลวง (FUD) หรือการตัดสินใจด้วยความหลอนที่เกิดจากจินตนาการด้านลบ',
         adviceTh: 'เชื่อในสิ่งที่เห็น ไม่ใช่สิ่งที่ "คิดว่าจะเป็น" รอดูสัญญาณที่ชัดเจนในระดับ Timeframe ที่ใหญ่ขึ้นเพื่อความชัวร์',
         icon: 'Moon',
-        color: '#94a3b8'
+        color: '#94a3b8',
+        image: '/images/t18.png'
     },
     {
         id: '19-the-sun',
@@ -250,7 +270,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'อาการเหลิง (Arrogance) หลังจากชนะครั้งใหญ่ ซึ่งมักจะเป็นจุดเริ่มต้นของความล้มเหลวครั้งถัดไป',
         adviceTh: 'จงมีความสุขกับความสำเร็จ แต่ให้รักษาวินัยไว้อย่างเคร่งครัดเหมือนตอนที่คุณยังไม่มีอะไร',
         icon: 'Sun',
-        color: '#fbbf24'
+        color: '#fbbf24',
+        image: '/images/t19.png'
     },
     {
         id: '20-judgement',
@@ -262,7 +283,8 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'การกลับไปทำผิดซ้ำซากทั้งที่รู้ความจริงอยู่เต็มอก หรือการไม่กล้าตัดสินใจในคืนที่สัญชาตญาณร้องเตือน',
         adviceTh: 'จงนำบทเรียนในอดีตมาใช้ ตัดสินใจครั้งสุดท้ายด้วยความจริงใจต่อตัวเอง แล้วคุณจะพบหนทางที่ถูกต้อง',
         icon: 'Flash',
-        color: '#8b5cf6'
+        color: '#8b5cf6',
+        image: '/images/t20.png'
     },
     {
         id: '21-the-world',
@@ -274,6 +296,7 @@ export const TAROT_CARDS: TarotCard[] = [
         challengeTh: 'ความกลัวที่จะเริ่มวัฏจักรใหม่หลังจากทำสำเร็จไปแล้ว หรือการไม่อยากออกจากคอมฟอร์ตโซนเดิมๆ',
         adviceTh: 'จงปิดรอบการทำกำไร (Close position) พักผ่อนและฉลองความสำเร็จ ก่อนจะเริ่มต้นก้าวใหม่ที่ใหญ่กว่าเดิม',
         icon: 'Global',
-        color: '#10b981'
+        color: '#10b981',
+        image: '/images/t21.png'
     }
 ];
