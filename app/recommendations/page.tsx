@@ -3,32 +3,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import {
-    Container,
-    Box,
-    Typography,
-    Card,
-    Stack,
-    Chip,
-    Button,
-    IconButton,
-    Tooltip,
-    Divider,
-    LinearProgress,
-    CircularProgress,
+    Container, Box, Typography, Card, Stack, Chip,
+    Button, Divider, LinearProgress,
 } from '@mui/material';
 import {
-    Ranking,
-    TrendUp,
-    TrendDown,
-    Activity,
-    Cpu,
-    Flash,
-    Chart,
-    Star,
-    InfoCircle,
-    ArrowRight2,
-    Refresh2,
-    Setting2,
+    TrendUp, TrendDown, Activity, Flash, Star,
+    InfoCircle, ArrowRight2, Setting2,
 } from 'iconsax-react';
 import Link from 'next/link';
 
@@ -47,201 +27,231 @@ interface RecommendedStock {
     date: string;
 }
 
-const StockItem = ({ stock }: { stock: RecommendedStock }) => (
-    <Card
-        sx={{
-            p: 0,
-            borderRadius: 2,
-            bgcolor: 'rgba(15, 23, 42, 0.4)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            overflow: 'hidden',
-            transition: 'all 0.3s ease',
-            '&:hover': {
-                transform: 'translateY(-4px)',
-                bgcolor: 'rgba(255,255,255,0.04)',
-                borderColor: stock.predictionTrend === 'UP' ? 'rgba(34, 197, 94, 0.4)' : 'rgba(255,255,255,0.12)',
-                boxShadow: stock.predictionTrend === 'UP' ? '0 10px 40px rgba(34, 197, 94, 0.12)' : '0 10px 40px rgba(0,0,0,0.2)'
-            }
-        }}
-    >
-        <Box sx={{ p: 2, pb: 1.5 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                    <Box
-                        sx={{
-                            width: 40,
-                            height: 40,
+// ─── Stock Card ───────────────────────────────────────────────────────────────
+const StockItem = ({ stock }: { stock: RecommendedStock }) => {
+    const isUp = stock.predictionTrend === 'UP';
+    const movePercent = stock.predictionTarget && stock.price
+        ? (((stock.predictionTarget - stock.price) / stock.price) * 100)
+        : null;
+
+    return (
+        <Card
+            sx={{
+                p: 0,
+                borderRadius: 3,
+                bgcolor: 'rgba(15, 23, 42, 0.5)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                overflow: 'hidden',
+                transition: 'all 0.25s ease',
+                '&:hover': {
+                    transform: { sm: 'translateY(-3px)' },
+                    borderColor: isUp ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)',
+                    boxShadow: isUp
+                        ? '0 8px 32px rgba(34,197,94,0.1)'
+                        : '0 8px 32px rgba(239,68,68,0.08)',
+                },
+            }}
+        >
+            {/* Top accent bar */}
+            <Box sx={{
+                height: 3,
+                background: isUp
+                    ? 'linear-gradient(90deg, #22c55e, #4ade80)'
+                    : 'linear-gradient(90deg, #ef4444, #f87171)',
+            }} />
+
+            {/* Card Body */}
+            <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+                {/* Row 1: Symbol + Price */}
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                        {/* Avatar */}
+                        <Box sx={{
+                            width: { xs: 36, sm: 40 },
+                            height: { xs: 36, sm: 40 },
                             borderRadius: 2,
                             background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
                             border: '1px solid rgba(255,255,255,0.1)',
-                        }}
-                    >
-                        <Typography variant="body2" sx={{ fontWeight: 900, color: '#0ea5e9', fontSize: '0.75rem' }}>
-                            {stock.symbol}
+                            flexShrink: 0,
+                        }}>
+                            <Typography sx={{ fontWeight: 900, color: '#0ea5e9', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                                {stock.symbol.slice(0, 4)}
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.95rem', sm: '1rem' }, letterSpacing: -0.3, lineHeight: 1.2 }}>
+                                {stock.symbol}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                                {new Date(stock.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                            </Typography>
+                        </Box>
+                    </Stack>
+
+                    {/* Price block */}
+                    <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                        <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.95rem', sm: '1rem' }, color: 'white', lineHeight: 1.2 }}>
+                            ${stock.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </Typography>
-                    </Box>
-                    <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.2 }}>
-                            {stock.symbol}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                            {new Date(stock.date).toLocaleDateString()}
+                        <Typography variant="caption" sx={{
+                            color: stock.changePercent >= 0 ? '#22c55e' : '#ef4444',
+                            fontWeight: 700, fontSize: '0.72rem',
+                        }}>
+                            {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
                         </Typography>
                     </Box>
                 </Stack>
-                <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'white', lineHeight: 1.2 }}>
-                        ${stock.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </Typography>
-                    <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end">
-                        <Typography variant="caption" sx={{ color: stock.change >= 0 ? '#22c55e' : '#ef4444', fontWeight: 700, fontSize: '0.75rem' }}>
-                            {stock.change >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
+
+                <Divider sx={{ opacity: 0.05, mb: 1.5 }} />
+
+                {/* Row 2: Trend + Confidence */}
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 1.5 }}>
+                    <Box sx={{ p: { xs: 1, sm: 1.5 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.6rem' }}>
+                            Trend
                         </Typography>
-                    </Stack>
+                        <Chip
+                            label={isUp ? 'BULLISH' : 'BEARISH'}
+                            size="small"
+                            sx={{
+                                bgcolor: isUp ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                                color: isUp ? '#4ade80' : '#f87171',
+                                fontWeight: 900, fontSize: '0.58rem', height: 20,
+                            }}
+                        />
+                    </Box>
+                    <Box sx={{ p: { xs: 1, sm: 1.5 }, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.6rem' }}>
+                            Confidence
+                        </Typography>
+                        <Typography sx={{ fontWeight: 800, fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
+                            {stock.predictionConfidence?.toFixed(1)}%
+                        </Typography>
+                    </Box>
                 </Box>
-            </Stack>
 
-            <Divider sx={{ opacity: 0.05, mb: 1.5 }} />
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 1.5 }}>
-                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.03)' }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.65rem' }}>
-                        Trend
+                {/* Reasoning */}
+                {stock.predictionReasoning && (
+                    <Typography variant="caption" sx={{
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden', color: 'text.secondary',
+                        bgcolor: 'rgba(14,165,233,0.03)', p: 1.5, borderRadius: 2,
+                        fontSize: '0.72rem', lineHeight: 1.45,
+                        border: '1px solid rgba(14,165,233,0.07)',
+                    }}>
+                        {stock.predictionReasoning}
                     </Typography>
-                    <Chip
-                        label={stock.predictionTrend === 'UP' ? 'BULLISH' : 'BEARISH'}
-                        size="small"
-                        sx={{
-                            bgcolor: stock.predictionTrend === 'UP' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            color: stock.predictionTrend === 'UP' ? '#4ade80' : '#f87171',
-                            fontWeight: 900,
-                            fontSize: '0.6rem',
-                            height: 20
-                        }}
-                    />
-                </Box>
-                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.03)' }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.65rem' }}>
-                        Confidence
-                    </Typography>
-                    <Typography variant="subtitle2" className="font-mono" sx={{ fontWeight: 800 }}>
-                        {stock.predictionConfidence?.toFixed(1)}%
-                    </Typography>
-                </Box>
+                )}
             </Box>
 
-            {stock.predictionReasoning && (
-                <Typography
-                    className="reasoning-text"
-                    variant="caption"
-                    sx={{
-                        color: 'text.secondary',
-                        bgcolor: 'rgba(14, 165, 233, 0.03)',
-                        p: 1.5,
-                        borderRadius: 2,
-                        fontSize: '0.75rem',
-                        lineHeight: 1.4,
-                        border: '1px solid rgba(14, 165, 233, 0.08)',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        mb: 1.5,
-                    }}
-                >
-                    {stock.predictionReasoning}
-                </Typography>
-            )}
-        </Box>
-
-        <Box
-            sx={{
-                p: 1.5,
-                px: 2,
-                bgcolor: 'rgba(255,255,255,0.03)',
-                borderTop: '1px solid rgba(255,255,255,0.05)',
+            {/* Card Footer */}
+            <Box sx={{
+                px: { xs: 1.5, sm: 2 }, py: 1.25,
+                bgcolor: 'rgba(255,255,255,0.02)',
+                borderTop: '1px solid rgba(255,255,255,0.04)',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
-            }}
-        >
-            <Stack direction="row" spacing={2}>
-                <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>
-                        Est. Move (1D)
-                    </Typography>
-                    <Typography
-                        variant="body2"
-                        className="font-mono"
+                alignItems: 'center',
+            }}>
+                {/* Stats */}
+                <Stack direction="row" spacing={{ xs: 1.5, sm: 2 }} alignItems="center">
+                    <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.6rem', mb: 0.1 }}>
+                            Est. Move (1D)
+                        </Typography>
+                        <Typography sx={{
+                            fontWeight: 800, fontSize: { xs: '0.82rem', sm: '0.88rem' },
+                            color: movePercent !== null
+                                ? (movePercent >= 0 ? '#4ade80' : '#f87171')
+                                : '#38bdf8',
+                        }}>
+                            {movePercent !== null
+                                ? `${movePercent >= 0 ? '+' : ''}${movePercent.toFixed(2)}%`
+                                : '-'}
+                        </Typography>
+                    </Box>
+                    <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.6rem', mb: 0.1 }}>
+                            RSI
+                        </Typography>
+                        <Typography sx={{
+                            fontWeight: 800, fontSize: { xs: '0.82rem', sm: '0.88rem' },
+                            color: (stock.rsi && stock.rsi > 70) ? '#f87171'
+                                : (stock.rsi && stock.rsi < 30) ? '#4ade80'
+                                    : 'white',
+                        }}>
+                            {stock.rsi?.toFixed(1) || '-'}
+                        </Typography>
+                    </Box>
+                </Stack>
+
+                {/* CTA */}
+                <Link href={`/?symbol=${stock.symbol}`} style={{ textDecoration: 'none' }}>
+                    <Button
+                        size="small"
+                        endIcon={<ArrowRight2 size={14} variant="Bold" color="#0ea5e9" />}
                         sx={{
-                            fontWeight: 800,
-                            color: stock.predictionTarget && stock.price
-                                ? (stock.predictionTarget >= stock.price ? '#4ade80' : '#f87171')
-                                : '#38bdf8'
+                            color: '#0ea5e9', fontWeight: 700,
+                            textTransform: 'none',
+                            fontSize: { xs: '0.75rem', sm: '0.82rem' },
+                            px: { xs: 1, sm: 1.5 }, py: 0.5,
+                            minWidth: 0,
+                            '&:hover': { bgcolor: 'rgba(14,165,233,0.08)' },
                         }}
                     >
-                        {stock.predictionTarget && stock.price
-                            ? `${stock.predictionTarget >= stock.price ? '+' : ''}${(((stock.predictionTarget - stock.price) / stock.price) * 100).toFixed(2)}%`
-                            : '-'
-                        }
-                    </Typography>
-                </Box>
-                <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>RSI</Typography>
-                    <Typography variant="body2" className="font-mono" sx={{ fontWeight: 800, color: (stock.rsi && stock.rsi > 70) ? '#f87171' : (stock.rsi && stock.rsi < 30) ? '#4ade80' : 'white' }}>
-                        {stock.rsi?.toFixed(1) || '-'}
-                    </Typography>
-                </Box>
-            </Stack>
+                        วิเคราะห์
+                    </Button>
+                </Link>
+            </Box>
+        </Card>
+    );
+};
 
-            <Link href={`/?symbol=${stock.symbol}`} style={{ textDecoration: 'none' }}>
-                <Button
-                    variant="text"
-                    endIcon={<ArrowRight2 size="16" variant='Bold' color='#0ea5e9' />}
-                    sx={{
-                        color: '#0ea5e9',
-                        fontWeight: 700,
-                        textTransform: 'none',
-                        fontSize: '0.85rem',
-                        '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.1)' }
-                    }}
-                >
-                    ดูการวิเคราะห์
-                </Button>
-            </Link>
-        </Box>
-    </Card>
+// ─── Filter Button ────────────────────────────────────────────────────────────
+const FilterBtn = ({
+    active, color, icon, label, onClick,
+}: {
+    active: boolean; color: string; icon: React.ReactNode; label: string; onClick: () => void;
+}) => (
+    <Button
+        onClick={onClick}
+        startIcon={icon}
+        sx={{
+            borderRadius: 10, px: { xs: 2, sm: 3 }, py: 0.85,
+            whiteSpace: 'nowrap', flexShrink: 0,
+            bgcolor: active ? `${color}18` : 'transparent',
+            color: active ? color : 'text.secondary',
+            border: `1px solid ${active ? `${color}55` : 'rgba(255,255,255,0.06)'}`,
+            fontWeight: 700, fontSize: { xs: '0.75rem', sm: '0.8rem' },
+            '&:hover': { bgcolor: `${color}10` },
+        }}
+    >
+        {label}
+    </Button>
 );
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function RecommendationsPage() {
     const { data: session } = useSession();
     const isAdmin = session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
     const [stocks, setStocks] = useState<RecommendedStock[]>([]);
     const [loading, setLoading] = useState(true);
-    const [syncing, setSyncing] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [filter, setFilter] = useState<'ALL' | 'OVERSOLD' | 'HIGH_CONFIDENCE' | 'BULLISH'>('ALL');
 
-    useEffect(() => {
-        setMounted(true);
-        fetchStocks();
-    }, []);
+    useEffect(() => { setMounted(true); fetchStocks(); }, []);
 
     const fetchStocks = async () => {
         setLoading(true);
         try {
             const res = await fetch('/api/stocks');
             const data = await res.json();
-            if (Array.isArray(data)) {
-                setStocks(data);
-            }
-        } catch (error) {
-            console.error('Failed to fetch recommendations:', error);
+            if (Array.isArray(data)) setStocks(data);
+        } catch (e) {
+            console.error('Failed to fetch recommendations:', e);
         } finally {
             setLoading(false);
         }
@@ -249,290 +259,163 @@ export default function RecommendationsPage() {
 
     const handleSync = async () => {
         if (!isAdmin) return;
-        setSyncing(true);
         try {
             const res = await fetch('/api/cron/sync');
             const data = await res.json();
-            if (data.message) {
-                alert(`อัปเดตเรียบร้อย: ${data.count} รายการ`);
-                fetchStocks();
-            }
-        } catch (error) {
-            console.error('Sync failed:', error);
-            alert('การอัปเดตล้มเหลว');
-        } finally {
-            setSyncing(false);
-        }
+            if (data.message) { alert(`อัปเดตเรียบร้อย: ${data.count} รายการ`); fetchStocks(); }
+        } catch { alert('การอัปเดตล้มเหลว'); }
     };
 
     const filteredStocks = useMemo(() => {
-        let result = [...stocks];
-
-        switch (filter) {
-            case 'OVERSOLD':
-                result = result.filter(s => (s.rsi && s.rsi < 40) && s.predictionTrend === 'UP');
-                break;
-            case 'HIGH_CONFIDENCE':
-                result = result.filter(s => (s.predictionConfidence || 0) >= 80);
-                break;
-            case 'BULLISH':
-                result = result.filter(s => s.predictionTrend === 'UP');
-                break;
-            default:
-                // Sort by confidence by default
-                result.sort((a, b) => (b.predictionConfidence || 0) - (a.predictionConfidence || 0));
-                break;
-        }
-
-        return result;
+        let r = [...stocks];
+        if (filter === 'OVERSOLD') r = r.filter(s => (s.rsi && s.rsi < 40) && s.predictionTrend === 'UP');
+        else if (filter === 'HIGH_CONFIDENCE') r = r.filter(s => (s.predictionConfidence || 0) >= 80);
+        else if (filter === 'BULLISH') r = r.filter(s => s.predictionTrend === 'UP');
+        else r.sort((a, b) => (b.predictionConfidence || 0) - (a.predictionConfidence || 0));
+        return r;
     }, [stocks, filter]);
 
-    const groupedStocks = useMemo(() => {
-        const bull = filteredStocks.filter((s: RecommendedStock) => s.predictionTrend === 'UP');
-        const bear = filteredStocks.filter((s: RecommendedStock) => s.predictionTrend !== 'UP');
-        return { bull, bear };
-    }, [filteredStocks]);
+    const { bull, bear } = useMemo(() => ({
+        bull: filteredStocks.filter(s => s.predictionTrend === 'UP'),
+        bear: filteredStocks.filter(s => s.predictionTrend !== 'UP'),
+    }), [filteredStocks]);
 
     if (!mounted) return null;
 
     return (
-        <Box sx={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-            {/* Background Blobs */}
-            <Box sx={{
-                position: 'fixed', top: -100, right: -100, width: 400, height: 400,
-                background: 'radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 70%)',
-                zIndex: -1, pointerEvents: 'none'
-            }} />
-            <Box sx={{
-                position: 'fixed', bottom: -100, left: -100, width: 400, height: 400,
-                background: 'radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%)',
-                zIndex: -1, pointerEvents: 'none'
-            }} />
+        <Box sx={{ position: 'relative', minHeight: '100vh' }}>
+            {/* BG blobs */}
+            <Box sx={{ position: 'fixed', top: -80, right: -80, width: { xs: 250, md: 400 }, height: { xs: 250, md: 400 }, background: 'radial-gradient(circle, rgba(14,165,233,0.07) 0%, transparent 70%)', zIndex: -1, pointerEvents: 'none' }} />
+            <Box sx={{ position: 'fixed', bottom: -80, left: -80, width: { xs: 250, md: 400 }, height: { xs: 250, md: 400 }, background: 'radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%)', zIndex: -1, pointerEvents: 'none' }} />
 
-            <Container maxWidth="xl" sx={{ py: 6, position: 'relative' }}>
+            <Container maxWidth="xl" sx={{ py: { xs: 3, md: 6 }, px: { xs: 1.5, sm: 3 } }}>
 
-                {/* Header Section */}
-                <Box sx={{ mb: 6 }}>
-                    <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        spacing={2}
-                        alignItems={{ xs: 'flex-start', sm: 'center' }}
-                        sx={{ mb: { xs: 3, md: 1 } }}
-                    >
-                        <Box>
-                            <Typography variant="h3" sx={{ fontWeight: 900, mb: 1, color: 'white' }}>
+                {/* ── Header ─────────────────────────────────── */}
+                <Box sx={{ mb: { xs: 3, md: 5 } }}>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ mb: { xs: 2, md: 1 } }}>
+                        <Box sx={{ flex: 1 }}>
+                            <Typography sx={{
+                                fontWeight: 900, color: 'white',
+                                fontSize: { xs: '1.65rem', sm: '2.2rem', md: '2.75rem' },
+                                lineHeight: 1.1, mb: 0.75,
+                            }}>
                                 Quantitative <span style={{ color: '#0284c7' }}>Stock Scanner</span>
                             </Typography>
-                            <Typography variant="body1" color="text.secondary" sx={{ mb: 1.5 }}>
-                                รวมหุ้นที่มีสัญญาณทางเทคนิคโดดเด่นจากระบบ Quantitative — ข้อมูลเพื่อประกอบการตัดสินใจเท่านั้น
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.25, fontSize: { xs: '0.8rem', sm: '0.9rem' }, lineHeight: 1.55 }}>
+                                หุ้นที่มีสัญญาณทางเทคนิคโดดเด่นจากระบบ Quantitative — ข้อมูลเพื่อประกอบการตัดสินใจเท่านั้น
                             </Typography>
                             <Stack direction="row" spacing={1} alignItems="center">
-                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#4ade80', animation: 'pulse 2s infinite' }} />
-                                <Typography variant="caption" sx={{ color: '#4ade80', fontWeight: 800, letterSpacing: 1 }}>
-                                    LIVE SYSTEM SIGNALS (GLOBAL)
+                                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#4ade80', animation: 'pulse 2s infinite' }} />
+                                <Typography variant="caption" sx={{ color: '#4ade80', fontWeight: 800, letterSpacing: 0.8, fontSize: '0.7rem' }}>
+                                    LIVE SYSTEM SIGNALS
                                 </Typography>
                             </Stack>
                         </Box>
 
                         {isAdmin && (
-                            <Box sx={{ ml: 'auto' }}>
+                            <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
                                 <Link href="/admin" passHref style={{ textDecoration: 'none' }}>
                                     <Button
                                         variant="outlined"
-                                        startIcon={<Setting2 size="18" variant="Bold" color="#0ea5e9" />}
+                                        startIcon={<Setting2 size={16} variant="Bold" color="#0ea5e9" />}
                                         sx={{
-                                            borderRadius: 2,
-                                            borderColor: 'rgba(14, 165, 233, 0.3)',
-                                            color: '#0ea5e9',
-                                            fontWeight: 800,
-                                            textTransform: 'none',
-                                            '&:hover': { borderColor: '#0ea5e9', bgcolor: 'rgba(14, 165, 233, 0.05)' }
+                                            borderRadius: 2, borderColor: 'rgba(14,165,233,0.3)',
+                                            color: '#0ea5e9', fontWeight: 800, textTransform: 'none',
+                                            width: { xs: '100%', sm: 'auto' }, fontSize: '0.82rem',
+                                            '&:hover': { borderColor: '#0ea5e9', bgcolor: 'rgba(14,165,233,0.05)' },
                                         }}
                                     >
-                                        Go to Admin Dashboard
+                                        Admin Dashboard
                                     </Button>
                                 </Link>
                             </Box>
                         )}
                     </Stack>
 
-                    {/* Filter Section */}
-                    <Stack
-                        direction="row"
-                        spacing={1.5}
-                        sx={{
-                            mt: { xs: 2, md: 4 },
-                            overflowX: 'auto',
-                            pb: 1.5,
-                            mx: { xs: -2, md: 0 },
-                            px: { xs: 2, md: 0 },
-                            '&::-webkit-scrollbar': { display: 'none' },
-                            WebkitOverflowScrolling: 'touch'
-                        }}
-                    >
-                        <Button
-                            onClick={() => setFilter('ALL')}
-                            startIcon={<Activity size="18" variant={filter === 'ALL' ? 'Bold' : 'Outline'} color="#0ea5e9" />}
-                            sx={{
-                                borderRadius: 10, px: 3, py: 1, whiteSpace: 'nowrap',
-                                bgcolor: filter === 'ALL' ? 'rgba(14, 165, 233, 0.1)' : 'transparent',
-                                color: filter === 'ALL' ? '#0ea5e9' : 'text.secondary',
-                                border: `1px solid ${filter === 'ALL' ? 'rgba(14, 165, 233, 0.3)' : 'rgba(255,255,255,0.05)'}`,
-                                fontWeight: 700,
-                                fontSize: '0.8rem',
-                                '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.05)' }
-                            }}
-                        >
-                            ทั้งหมด
-                        </Button>
-                        <Button
-                            onClick={() => setFilter('OVERSOLD')}
-                            startIcon={<TrendUp size="18" variant={filter === 'OVERSOLD' ? 'Bold' : 'Outline'} color="#4ade80" />}
-                            sx={{
-                                borderRadius: 10, px: 3, py: 1, whiteSpace: 'nowrap',
-                                bgcolor: filter === 'OVERSOLD' ? 'rgba(74, 222, 128, 0.1)' : 'transparent',
-                                color: filter === 'OVERSOLD' ? '#4ade80' : 'text.secondary',
-                                border: `1px solid ${filter === 'OVERSOLD' ? 'rgba(74, 222, 128, 0.3)' : 'rgba(255,255,255,0.05)'}`,
-                                fontWeight: 700,
-                                fontSize: '0.8rem',
-                                '&:hover': { bgcolor: 'rgba(74, 222, 128, 0.05)' }
-                            }}
-                        >
-                            หุ้นราคาถูก (RSI &lt; 40)
-                        </Button>
-                        <Button
-                            onClick={() => setFilter('HIGH_CONFIDENCE')}
-                            startIcon={<Star size="18" variant={filter === 'HIGH_CONFIDENCE' ? 'Bold' : 'Outline'} color="#fcd34d" />}
-                            sx={{
-                                borderRadius: 10, px: 3, py: 1, whiteSpace: 'nowrap',
-                                bgcolor: filter === 'HIGH_CONFIDENCE' ? 'rgba(252, 211, 77, 0.1)' : 'transparent',
-                                color: filter === 'HIGH_CONFIDENCE' ? '#fcd34d' : 'text.secondary',
-                                border: `1px solid ${filter === 'HIGH_CONFIDENCE' ? 'rgba(252, 211, 77, 0.3)' : 'rgba(255,255,255,0.05)'}`,
-                                fontWeight: 700,
-                                fontSize: '0.8rem',
-                                '&:hover': { bgcolor: 'rgba(252, 211, 77, 0.05)' }
-                            }}
-                        >
-                            ความแม่นยำสูง (&gt; 80%)
-                        </Button>
-                        <Button
-                            onClick={() => setFilter('BULLISH')}
-                            startIcon={<Flash size="18" variant={filter === 'BULLISH' ? 'Bold' : 'Outline'} color="#0ea5e9" />}
-                            sx={{
-                                borderRadius: 10, px: 3, py: 1, whiteSpace: 'nowrap',
-                                bgcolor: filter === 'BULLISH' ? 'rgba(14, 165, 233, 0.1)' : 'transparent',
-                                color: filter === 'BULLISH' ? '#0ea5e9' : 'text.secondary',
-                                border: `1px solid ${filter === 'BULLISH' ? 'rgba(14, 165, 233, 0.3)' : 'rgba(255,255,255,0.05)'}`,
-                                fontWeight: 700,
-                                fontSize: '0.8rem',
-                                '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.05)' }
-                            }}
-                        >
-                            ขาขึ้น (BULLISH)
-                        </Button>
-                    </Stack>
+                    {/* Filter chips — horizontal scroll on mobile */}
+                    <Box sx={{
+                        mt: { xs: 2, md: 3 },
+                        mx: { xs: -1.5, sm: 0 },
+                        px: { xs: 1.5, sm: 0 },
+                        display: 'flex', gap: 1,
+                        overflowX: 'auto',
+                        '&::-webkit-scrollbar': { display: 'none' },
+                        WebkitOverflowScrolling: 'touch',
+                    }}>
+                        <FilterBtn active={filter === 'ALL'} color="#0ea5e9" onClick={() => setFilter('ALL')} label="ทั้งหมด" icon={<Activity size={16} variant={filter === 'ALL' ? 'Bold' : 'Outline'} color="#0ea5e9" />} />
+                        <FilterBtn active={filter === 'OVERSOLD'} color="#4ade80" onClick={() => setFilter('OVERSOLD')} label="RSI < 40 + Bullish" icon={<TrendUp size={16} variant={filter === 'OVERSOLD' ? 'Bold' : 'Outline'} color="#4ade80" />} />
+                        <FilterBtn active={filter === 'HIGH_CONFIDENCE'} color="#fcd34d" onClick={() => setFilter('HIGH_CONFIDENCE')} label="Confidence > 80%" icon={<Star size={16} variant={filter === 'HIGH_CONFIDENCE' ? 'Bold' : 'Outline'} color="#fcd34d" />} />
+                        <FilterBtn active={filter === 'BULLISH'} color="#38bdf8" onClick={() => setFilter('BULLISH')} label="Bullish" icon={<Flash size={16} variant={filter === 'BULLISH' ? 'Bold' : 'Outline'} color="#38bdf8" />} />
+                    </Box>
                 </Box>
 
-
+                {/* ── Content ────────────────────────────────── */}
                 {loading ? (
-                    <Box sx={{ width: '100%', mt: 4 }}>
-                        <LinearProgress sx={{ borderRadius: 5, height: 6, bgcolor: 'rgba(255,255,255,0.05)' }} />
+                    <Box sx={{ mt: 4 }}>
+                        <LinearProgress sx={{ borderRadius: 5, height: 5, bgcolor: 'rgba(255,255,255,0.05)' }} />
                     </Box>
                 ) : filteredStocks.length === 0 ? (
-                    <Card
-                        sx={{
-                            p: 8,
-                            textAlign: 'center',
-                            borderRadius: 4,
-                            bgcolor: 'rgba(255,255,255,0.02)',
-                            border: '1px dashed rgba(255,255,255,0.1)'
-                        }}
-                    >
-                        <Activity size="64" color="rgba(255,255,255,0.1)" />
-                        <Typography variant="h6" sx={{ mt: 3, mb: 1, color: 'text.secondary' }}>
+                    <Box sx={{ textAlign: 'center', py: { xs: 6, sm: 12 } }}>
+                        <Activity size={48} color="rgba(255,255,255,0.1)" />
+                        <Typography variant="h6" sx={{ mt: 2, mb: 1, color: 'text.secondary', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                             ไม่พบหุ้นที่ตรงตามเงื่อนไข
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                            ลองปรับเปลี่ยนตัวกรอง หรือวิเคราะห์หุ้นตัวใหม่ๆ เพิ่มเติม
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, fontSize: '0.82rem' }}>
+                            ลองปรับเปลี่ยนตัวกรอง หรือวิเคราะห์หุ้นตัวใหม่เพิ่มเติม
                         </Typography>
-                        <Button
-                            variant="outlined"
-                            onClick={() => setFilter('ALL')}
-                            sx={{ borderRadius: 10, px: 4, py: 1, fontWeight: 700 }}
-                        >
-                            ล้างตัวกรองทั้งหมด
+                        <Button variant="outlined" onClick={() => setFilter('ALL')} sx={{ borderRadius: 10, px: 4, fontWeight: 700, fontSize: '0.82rem' }}>
+                            ล้างตัวกรอง
                         </Button>
-                    </Card>
+                    </Box>
                 ) : (
-                    <Stack spacing={6}>
-                        {/* Bull Section */}
-                        {groupedStocks.bull.length > 0 && (
+                    <Stack spacing={{ xs: 4, md: 6 }}>
+                        {/* Bull */}
+                        {bull.length > 0 && (
                             <Box>
-                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
-                                    <TrendUp size="24" color="#4ade80" variant="Bold" />
-                                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'white' }}>
-                                        สัญญาณ Bullish จากระบบ
-                                        <Typography component="span" variant="caption" sx={{ ml: 1.5, color: '#4ade80', fontWeight: 700, bgcolor: 'rgba(74, 222, 128, 0.1)', px: 1, py: 0.3, borderRadius: 1.5 }}>
-                                            {groupedStocks.bull.length} รายการ
-                                        </Typography>
+                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: { xs: 2, sm: 3 } }}>
+                                    <TrendUp size={22} color="#4ade80" variant="Bold" />
+                                    <Typography sx={{ fontWeight: 800, color: 'white', fontSize: { xs: '1.05rem', sm: '1.35rem' } }}>
+                                        สัญญาณ Bullish
                                     </Typography>
+                                    <Chip label={`${bull.length} รายการ`} size="small" sx={{ color: '#4ade80', fontWeight: 700, bgcolor: 'rgba(74,222,128,0.1)', fontSize: '0.7rem' }} />
                                 </Stack>
-                                <Box sx={{
-                                    display: 'grid',
-                                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' },
-                                    gap: 2
-                                }}>
-                                    {groupedStocks.bull.map((stock: RecommendedStock) => (
-                                        <StockItem key={stock.id} stock={stock} />
-                                    ))}
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: { xs: 1.5, sm: 2 } }}>
+                                    {bull.map(s => <StockItem key={s.id} stock={s} />)}
                                 </Box>
                             </Box>
                         )}
 
-                        {/* Bear Section */}
-                        {groupedStocks.bear.length > 0 && (
+                        {/* Bear */}
+                        {bear.length > 0 && (
                             <Box>
-                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
-                                    <TrendDown size="24" color="#ef4444" variant="Bold" />
-                                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'white' }}>
-                                        สัญญาณ Bearish จากระบบ
-                                        <Typography component="span" variant="caption" sx={{ ml: 1.5, color: '#ef4444', fontWeight: 700, bgcolor: 'rgba(239, 68, 68, 0.1)', px: 1, py: 0.3, borderRadius: 1.5 }}>
-                                            {groupedStocks.bear.length} รายการ
-                                        </Typography>
+                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: { xs: 2, sm: 3 } }}>
+                                    <TrendDown size={22} color="#ef4444" variant="Bold" />
+                                    <Typography sx={{ fontWeight: 800, color: 'white', fontSize: { xs: '1.05rem', sm: '1.35rem' } }}>
+                                        สัญญาณ Bearish
                                     </Typography>
+                                    <Chip label={`${bear.length} รายการ`} size="small" sx={{ color: '#ef4444', fontWeight: 700, bgcolor: 'rgba(239,68,68,0.1)', fontSize: '0.7rem' }} />
                                 </Stack>
-                                <Box sx={{
-                                    display: 'grid',
-                                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' },
-                                    gap: 2
-                                }}>
-                                    {groupedStocks.bear.map((stock: RecommendedStock) => (
-                                        <StockItem key={stock.id} stock={stock} />
-                                    ))}
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: { xs: 1.5, sm: 2 } }}>
+                                    {bear.map(s => <StockItem key={s.id} stock={s} />)}
                                 </Box>
                             </Box>
                         )}
                     </Stack>
                 )}
 
-
-                {/* Disclaimer */}
-                <Box sx={{
-                    mt: 8, p: 3, borderRadius: 4,
-                    bgcolor: 'rgba(15, 23, 42, 0.3)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    backdropFilter: 'blur(10px)'
-                }}>
-                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-                        <InfoCircle size="22" color="#0ea5e9" variant="Bulk" />
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'white' }}>
-                            Quantitative Analysis Disclaimer
+                {/* ── Disclaimer ─────────────────────────────── */}
+                <Box sx={{ mt: { xs: 5, md: 8 }, p: { xs: 2, sm: 3 }, borderRadius: 3, bgcolor: 'rgba(15,23,42,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
+                        <InfoCircle size={18} color="#0ea5e9" variant="Bulk" />
+                        <Typography sx={{ fontWeight: 800, color: 'white', fontSize: { xs: '0.85rem', sm: '1rem' } }}>
+                            Disclaimer
                         </Typography>
                     </Stack>
-                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7, fontSize: '0.85rem' }}>
-                        ข้อมูลที่แสดงเป็นการประมวลผลเชิงปริมาณผ่าน Algorithm เท่านั้น ไม่ใช่คำแนะนำทางการเงิน การลงทุนมีความเสี่ยง ผู้ลงทุนควรใช้ดุลยพินิจและรับผิดชอบความเสี่ยงด้วยตนเอง ระบบนี้เป็นเพียงเครื่องมือช่วยคัดกรองสัญญาณเทคนิคทางสถิติเบื้องต้น
+                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7, fontSize: { xs: '0.78rem', sm: '0.85rem' } }}>
+                        ข้อมูลที่แสดงเป็นการประมวลผลเชิงปริมาณผ่าน Algorithm เท่านั้น ไม่ใช่คำแนะนำทางการเงิน การลงทุนมีความเสี่ยง ผู้ลงทุนควรใช้ดุลยพินิจและรับผิดชอบความเสี่ยงด้วยตนเอง
                     </Typography>
                 </Box>
+
             </Container>
         </Box>
     );
