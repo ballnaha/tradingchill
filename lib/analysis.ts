@@ -44,7 +44,7 @@ export async function analyzeStock(symbol: string) {
             avgVolume10d = recent10.length > 0 ? recent10.reduce((a: number, b: number) => a + b, 0) / recent10.length : undefined;
         }
 
-        const sliceLen = Math.min(5, closes.length);
+        const sliceLen = Math.min(10, closes.length);
         recentOpens = (candleData.o || []).slice(-sliceLen);
         recentHighs = (candleData.h || []).slice(-sliceLen);
         recentLows = (candleData.l || []).slice(-sliceLen);

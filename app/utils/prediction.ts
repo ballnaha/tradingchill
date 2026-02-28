@@ -17,11 +17,11 @@ export interface StockQuote {
     lowerBB?: number;
     upperBB?: number;
 
-    // MACD (computed in page.tsx via technicalindicators)
-    macdHistogram?: number;       // positive = bullish momentum, negative = bearish
-    macdPrevHistogram?: number;   // previous bar for divergence
+    // MACD
+    macdHistogram?: number;
+    macdPrevHistogram?: number;
 
-    // OHLC arrays for candlestick pattern detection (last 5 candles)
+    // OHLC arrays (last 10 candles ideally)
     recentOpens?: number[];
     recentHighs?: number[];
     recentLows?: number[];
@@ -45,13 +45,13 @@ export interface StockQuote {
     analystSell?: number;
 
     // Earnings Surprise (last quarter)
-    earningsSurprise?: number;    // % surprise (actual - estimate) / |estimate|
+    earningsSurprise?: number;
 
     // Insider Activity (last 6 months)
-    insiderNet?: number;          // net shares bought (positive = buying, negative = selling)
+    insiderNet?: number;
 
     // Relative Strength vs market
-    spyChangePercent?: number;    // SPY's % change today
+    spyChangePercent?: number;
 }
 
 export interface PredictionResult {
@@ -67,390 +67,517 @@ export interface PredictionResult {
     reasoningPoints: { label: string; value: string; signal: 'positive' | 'negative' | 'neutral' }[];
 }
 
-// ─── Candlestick Pattern Detection ────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface Candle { o: number; h: number; l: number; c: number; }
+type MarketRegime = 'TRENDING_UP' | 'TRENDING_DOWN' | 'VOLATILE' | 'SIDEWAYS';
+interface Signal { score: number; weight: number; label: string; value: string; signal: 'positive' | 'negative' | 'neutral'; }
 
-function detectCandlestickPattern(candles: Candle[]): { name: string; signal: 'bullish' | 'bearish' | 'neutral' } | null {
+// ─── ATR (Average True Range) ─────────────────────────────────────────────────
+function calcATR(candles: Candle[]): number {
+    if (candles.length < 2) return 0;
+    let atrSum = 0;
+    const n = Math.min(candles.length - 1, 14);
+    for (let i = candles.length - n; i < candles.length; i++) {
+        const prev = candles[i - 1];
+        const cur = candles[i];
+        const tr = Math.max(
+            cur.h - cur.l,
+            Math.abs(cur.h - prev.c),
+            Math.abs(cur.l - prev.c)
+        );
+        atrSum += tr;
+    }
+    return atrSum / n;
+}
+
+// ─── Market Regime Detection ──────────────────────────────────────────────────
+function detectRegime(q: StockQuote): MarketRegime {
+    const { sma20, sma50, sma200, price, beta } = q;
+    const highVol = (beta ?? 1) > 1.8;
+
+    if (highVol) return 'VOLATILE';
+
+    if (sma20 && sma50 && sma200) {
+        if (sma20 > sma50 && sma50 > sma200 && price > sma20) return 'TRENDING_UP';
+        if (sma20 < sma50 && sma50 < sma200 && price < sma20) return 'TRENDING_DOWN';
+    }
+    if (sma20 && sma50) {
+        if (sma20 > sma50 * 1.01 && price > sma20) return 'TRENDING_UP';
+        if (sma20 < sma50 * 0.99 && price < sma20) return 'TRENDING_DOWN';
+    }
+    return 'SIDEWAYS';
+}
+
+// ─── Candlestick Patterns ─────────────────────────────────────────────────────
+function detectCandlestickPattern(candles: Candle[]): { name: string; signal: 'bullish' | 'bearish' | 'neutral'; strength: number } | null {
     if (candles.length < 2) return null;
-    const today = candles[candles.length - 1];
-    const prev = candles[candles.length - 2];
-    const prev2 = candles.length >= 3 ? candles[candles.length - 3] : null;
+    const c0 = candles[candles.length - 1];
+    const c1 = candles[candles.length - 2];
+    const c2 = candles.length >= 3 ? candles[candles.length - 3] : null;
 
-    const body = Math.abs(today.c - today.o);
-    const range = today.h - today.l;
-    const upperShadow = today.h - Math.max(today.c, today.o);
-    const lowerShadow = Math.min(today.c, today.o) - today.l;
-    const isGreen = today.c > today.o;
-    const prevBody = Math.abs(prev.c - prev.o);
-    const prevIsGreen = prev.c > prev.o;
+    const body = Math.abs(c0.c - c0.o);
+    const range = c0.h - c0.l;
+    const upper = c0.h - Math.max(c0.c, c0.o);
+    const lower = Math.min(c0.c, c0.o) - c0.l;
+    const isGreen = c0.c > c0.o;
+    const prevBody = Math.abs(c1.c - c1.o);
+    const prevIsGreen = c1.c > c1.o;
 
     if (range === 0) return null;
 
-    // Doji — indecision
-    if (body / range < 0.1) {
-        return { name: 'Doji', signal: 'neutral' };
-    }
+    // Doji
+    if (body / range < 0.08) return { name: 'Doji (ลังเล)', signal: 'neutral', strength: 0.3 };
 
-    // Hammer (bullish reversal at bottom)
-    if (isGreen && lowerShadow > body * 2 && upperShadow < body * 0.5) {
-        return { name: 'Hammer (สัญญาณกลับตัวขาขึ้น)', signal: 'bullish' };
-    }
+    // Pin Bar / Hammer
+    if (isGreen && lower > body * 2.5 && upper < body * 0.4 && body / range > 0.2)
+        return { name: 'Hammer (กลับตัวขาขึ้น)', signal: 'bullish', strength: 0.8 };
 
-    // Shooting Star (bearish reversal at top)
-    if (!isGreen && upperShadow > body * 2 && lowerShadow < body * 0.5) {
-        return { name: 'Shooting Star (สัญญาณกลับตัวขาลง)', signal: 'bearish' };
-    }
+    // Inverted Hammer (bullish)
+    if (isGreen && upper > body * 2.5 && lower < body * 0.4)
+        return { name: 'Inverted Hammer (สัญญาณกลับตัวบวก)', signal: 'bullish', strength: 0.5 };
+
+    // Shooting Star
+    if (!isGreen && upper > body * 2.5 && lower < body * 0.4 && body / range > 0.2)
+        return { name: 'Shooting Star (กลับตัวขาลง)', signal: 'bearish', strength: 0.8 };
 
     // Bullish Engulfing
-    if (isGreen && !prevIsGreen && today.o <= prev.c && today.c >= prev.o && body > prevBody) {
-        return { name: 'Bullish Engulfing (แรงซื้อกลืนกิน)', signal: 'bullish' };
-    }
+    if (isGreen && !prevIsGreen && c0.o <= c1.c && c0.c >= c1.o && body > prevBody * 1.1)
+        return { name: 'Bullish Engulfing (แรงซื้อกลืนกิน)', signal: 'bullish', strength: 1.0 };
 
     // Bearish Engulfing
-    if (!isGreen && prevIsGreen && today.o >= prev.c && today.c <= prev.o && body > prevBody) {
-        return { name: 'Bearish Engulfing (แรงขายกลืนกิน)', signal: 'bearish' };
+    if (!isGreen && prevIsGreen && c0.o >= c1.c && c0.c <= c1.o && body > prevBody * 1.1)
+        return { name: 'Bearish Engulfing (แรงขายกลืนกิน)', signal: 'bearish', strength: 1.0 };
+
+    // Morning Star
+    if (c2 && isGreen && !prevIsGreen) {
+        const c2Body = Math.abs(c2.c - c2.o);
+        const prevBodySmall = Math.abs(c1.c - c1.o);
+        if (!(c2.c > c2.o) && c2Body > prevBodySmall * 2.5 && c0.c > (c2.o + c2.c) / 2)
+            return { name: 'Morning Star (รุ่งอรุณขาขึ้น)', signal: 'bullish', strength: 1.2 };
     }
 
-    // Morning Star (3-candle bullish)
-    if (prev2 && isGreen && !prevIsGreen && !(prev2.c > prev2.o) === false) {
-        const prev2Body = Math.abs(prev2.c - prev2.o);
-        const prevBody2 = Math.abs(prev.c - prev.o);
-        if (prev2Body > prevBody2 * 3 && today.c > (prev2.o + prev2.c) / 2) {
-            return { name: 'Morning Star (สัญญาณรุ่งอรุณ ขาขึ้น)', signal: 'bullish' };
-        }
+    // Evening Star
+    if (c2 && !isGreen && prevIsGreen && c2.c > c2.o) {
+        const c2Body = Math.abs(c2.c - c2.o);
+        const prevBodySmall = Math.abs(c1.c - c1.o);
+        if (c2Body > prevBodySmall * 2.5 && c0.c < (c2.o + c2.c) / 2)
+            return { name: 'Evening Star (พระอาทิตย์ตกขาลง)', signal: 'bearish', strength: 1.2 };
     }
 
-    // Evening Star (3-candle bearish)
-    if (prev2 && !isGreen && prevIsGreen && prev2.c > prev2.o) {
-        const prev2Body = Math.abs(prev2.c - prev2.o);
-        const prevBody2 = Math.abs(prev.c - prev.o);
-        if (prev2Body > prevBody2 * 3 && today.c < (prev2.o + prev2.c) / 2) {
-            return { name: 'Evening Star (สัญญาณพระอาทิตย์ตก ขาลง)', signal: 'bearish' };
-        }
-    }
-
-    // Marubozu (strong candle, no shadows)
-    if (upperShadow < body * 0.05 && lowerShadow < body * 0.05) {
+    // Marubozu
+    if (upper < body * 0.04 && lower < body * 0.04 && body / range > 0.9)
         return isGreen
-            ? { name: 'Bullish Marubozu (แรงซื้อแข็งแกร่ง)', signal: 'bullish' }
-            : { name: 'Bearish Marubozu (แรงขายแข็งแกร่ง)', signal: 'bearish' };
-    }
+            ? { name: 'Bullish Marubozu (แรงซื้อแข็งแกร่ง)', signal: 'bullish', strength: 0.9 }
+            : { name: 'Bearish Marubozu (แรงขายแข็งแกร่ง)', signal: 'bearish', strength: 0.9 };
+
+    // Three White Soldiers
+    if (c2 && isGreen && prevIsGreen && c2.c > c2.o &&
+        c0.c > c1.c && c1.c > c2.c && body > 0 && prevBody > 0 && Math.abs(c2.c - c2.o) > 0)
+        return { name: 'Three White Soldiers (ขาขึ้นต่อเนื่อง)', signal: 'bullish', strength: 1.3 };
+
+    // Three Black Crows
+    if (c2 && !isGreen && !prevIsGreen && !(c2.c > c2.o) &&
+        c0.c < c1.c && c1.c < c2.c)
+        return { name: 'Three Black Crows (ขาลงต่อเนื่อง)', signal: 'bearish', strength: 1.3 };
 
     return null;
 }
 
-// ─── Main Prediction Function ─────────────────────────────────────────────────
+// ─── RSI Divergence (price new high but RSI lower = bearish div) ───────────────
+function detectRSIDivergence(closes: number[], rsi: number): 'bullish' | 'bearish' | null {
+    if (closes.length < 5) return null;
+    const recent = closes.slice(-3);
+    const earlier = closes.slice(-6, -3);
+    const recentHigh = Math.max(...recent);
+    const earlierHigh = Math.max(...earlier);
+    const recentLow = Math.min(...recent);
+    const earlierLow = Math.min(...earlier);
+
+    // Bearish divergence: price higher high but RSI < 65 (weakening)
+    if (recentHigh > earlierHigh * 1.005 && rsi < 65) return 'bearish';
+    // Bullish divergence: price lower low but RSI > 35 (strengthening)
+    if (recentLow < earlierLow * 0.995 && rsi > 35) return 'bullish';
+    return null;
+}
+
+// ─── Trend Strength via Slope ─────────────────────────────────────────────────
+function calcSlope(values: number[]): number {
+    if (values.length < 2) return 0;
+    const n = values.length;
+    const xMean = (n - 1) / 2;
+    const yMean = values.reduce((a, b) => a + b, 0) / n;
+    let num = 0, den = 0;
+    values.forEach((y, x) => { num += (x - xMean) * (y - yMean); den += (x - xMean) ** 2; });
+    return den === 0 ? 0 : num / den;
+}
+
+// ─── Main Prediction Function ── Professional Edition ─────────────────────────
 export const getPrediction = (q: StockQuote): PredictionResult => {
-    let score = 0;
-    let factorsCount = 0;
-    const details: string[] = [];
-    const reasoningPoints: PredictionResult['reasoningPoints'] = [];
+    const signals: Signal[] = [];
+    const regime = detectRegime(q);
 
-    // ─── 1. TREND — SMA Short / Medium / Long ─────────────────────────────────
+    // Regime-based weight multipliers (momentum signals matter more in trending markets)
+    const trendMul = regime === 'TRENDING_UP' || regime === 'TRENDING_DOWN' ? 1.3 : 1.0;
+    const momentumMul = regime === 'VOLATILE' ? 0.7 : 1.0;
+    const fundamentalMul = regime === 'SIDEWAYS' ? 1.2 : 0.9;
+
+    // ─── 1. TREND — Triple SMA System (HIGH WEIGHT) ──────────────────────────
     if (q.sma20 && q.sma50) {
-        factorsCount++;
+        // Price vs SMA20
+        const pctAbove20 = ((q.price - q.sma20) / q.sma20) * 100;
         if (q.price > q.sma20) {
-            score += 1;
-            reasoningPoints.push({ label: 'ราคา vs SMA20', value: `$${q.price.toFixed(2)} > SMA20 $${q.sma20.toFixed(2)} → ระยะสั้นบวก`, signal: 'positive' });
+            signals.push({ score: Math.min(pctAbove20 / 2, 1.5), weight: 2.5 * trendMul, label: 'ราคา vs SMA20', value: `ราคา $${q.price.toFixed(2)} เหนือ SMA20 $${q.sma20.toFixed(2)} (+${pctAbove20.toFixed(1)}%) → ระยะสั้นบวก`, signal: 'positive' });
         } else {
-            score -= 1;
-            reasoningPoints.push({ label: 'ราคา vs SMA20', value: `$${q.price.toFixed(2)} < SMA20 $${q.sma20.toFixed(2)} → ระยะสั้นอ่อนแอ`, signal: 'negative' });
+            signals.push({ score: Math.max(pctAbove20 / 2, -1.5), weight: 2.5 * trendMul, label: 'ราคา vs SMA20', value: `ราคา $${q.price.toFixed(2)} ต่ำกว่า SMA20 $${q.sma20.toFixed(2)} (${pctAbove20.toFixed(1)}%) → ระยะสั้นลบ`, signal: 'negative' });
         }
+
+        // Golden/Death Cross
+        const crossStrength = ((q.sma20 - q.sma50) / q.sma50) * 100;
         if (q.sma20 > q.sma50) {
-            score += 1.5; details.push('Golden Cross SMA20>SMA50');
-            reasoningPoints.push({ label: 'SMA Crossover', value: `SMA20 $${q.sma20.toFixed(2)} > SMA50 $${q.sma50.toFixed(2)} → Golden Cross ระยะกลางบวก`, signal: 'positive' });
+            signals.push({ score: Math.min(1 + crossStrength / 3, 2), weight: 2.0 * trendMul, label: 'SMA20/50 Cross', value: `Golden Cross: SMA20 $${q.sma20.toFixed(2)} > SMA50 $${q.sma50.toFixed(2)} (+${crossStrength.toFixed(2)}%) → Momentum ขาขึ้น`, signal: 'positive' });
         } else {
-            score -= 1.5; details.push('Death Cross SMA20<SMA50');
-            reasoningPoints.push({ label: 'SMA Crossover', value: `SMA20 $${q.sma20.toFixed(2)} < SMA50 $${q.sma50.toFixed(2)} → Death Cross ระยะกลางลบ`, signal: 'negative' });
+            signals.push({ score: Math.max(-1 - Math.abs(crossStrength) / 3, -2), weight: 2.0 * trendMul, label: 'SMA20/50 Cross', value: `Death Cross: SMA20 $${q.sma20.toFixed(2)} < SMA50 $${q.sma50.toFixed(2)} (${crossStrength.toFixed(2)}%) → Momentum ขาลง`, signal: 'negative' });
         }
     }
+
     if (q.sma200) {
-        factorsCount++;
+        const pctVs200 = ((q.price - q.sma200) / q.sma200) * 100;
         if (q.price > q.sma200) {
-            score += 1;
-            reasoningPoints.push({ label: 'SMA200 (ระยะยาว)', value: `ราคาเหนือ SMA200 $${q.sma200.toFixed(2)} → Bullish Market ระยะยาว`, signal: 'positive' });
+            signals.push({ score: 1, weight: 1.8 * trendMul, label: 'SMA200 (Long-Term)', value: `ราคาเหนือ SMA200 $${q.sma200.toFixed(2)} (+${pctVs200.toFixed(1)}%) → Bullish Territory ระยะยาว`, signal: 'positive' });
         } else {
-            score -= 1;
-            reasoningPoints.push({ label: 'SMA200 (ระยะยาว)', value: `ราคาต่ำกว่า SMA200 $${q.sma200.toFixed(2)} → Bearish Market ระยะยาว`, signal: 'negative' });
+            signals.push({ score: -1, weight: 1.8 * trendMul, label: 'SMA200 (Long-Term)', value: `ราคาต่ำกว่า SMA200 $${q.sma200.toFixed(2)} (${pctVs200.toFixed(1)}%) → Bearish Territory ระยะยาว`, signal: 'negative' });
         }
     }
 
-    // ─── TREND ALIGNMENT BONUS (SMA20 > SMA50 > SMA200 or reverse) ──────────
+    // Triple SMA Alignment (strong confluence)
     if (q.sma20 && q.sma50 && q.sma200) {
-        if (q.sma20 > q.sma50 && q.sma50 > q.sma200) {
-            score += 1.5;
-            details.push('Triple SMA alignment bullish');
-            reasoningPoints.push({ label: 'Trend Alignment', value: `SMA20 > SMA50 > SMA200 → เทรนด์ขาขึ้นยืนยันทุกกรอบเวลา`, signal: 'positive' });
-        } else if (q.sma20 < q.sma50 && q.sma50 < q.sma200) {
-            score -= 1.5;
-            details.push('Triple SMA alignment bearish');
-            reasoningPoints.push({ label: 'Trend Alignment', value: `SMA20 < SMA50 < SMA200 → เทรนด์ขาลงยืนยันทุกกรอบเวลา`, signal: 'negative' });
+        if (q.sma20 > q.sma50 && q.sma50 > q.sma200 && q.price > q.sma20) {
+            signals.push({ score: 1, weight: 2.5 * trendMul, label: 'Trend Alignment ✓', value: `ราคา > SMA20 > SMA50 > SMA200 → Perfect Bull Alignment ยืนยันทุกกรอบเวลา`, signal: 'positive' });
+        } else if (q.sma20 < q.sma50 && q.sma50 < q.sma200 && q.price < q.sma20) {
+            signals.push({ score: -1, weight: 2.5 * trendMul, label: 'Trend Alignment ✗', value: `ราคา < SMA20 < SMA50 < SMA200 → Perfect Bear Alignment ยืนยันทุกกรอบเวลา`, signal: 'negative' });
         }
     }
 
-    // ─── 2. MACD ──────────────────────────────────────────────────────────────
+    // SMA Slope (trend acceleration)
+    if (q.recentCloses && q.recentCloses.length >= 5) {
+        const slope = calcSlope(q.recentCloses.slice(-5));
+        const slopePct = (slope / q.price) * 100;
+        if (Math.abs(slopePct) > 0.1) {
+            const sc = Math.min(Math.abs(slopePct) / 0.3, 1);
+            signals.push({ score: slopePct > 0 ? sc : -sc, weight: 1.5 * trendMul, label: 'Price Slope (5d)', value: `ทิศทางราคา 5 วัน: ${slopePct > 0 ? '+' : ''}${slopePct.toFixed(2)}%/วัน → เทรนด์${slopePct > 0 ? 'เร่งขึ้น' : 'เร่งลง'}`, signal: slopePct > 0 ? 'positive' : 'negative' });
+        }
+    }
+
+    // ─── 2. MACD (HIGH WEIGHT — momentum) ─────────────────────────────────────
     if (q.macdHistogram !== undefined) {
-        factorsCount++;
         const growing = q.macdPrevHistogram !== undefined && q.macdHistogram > q.macdPrevHistogram;
+        const histAbs = Math.abs(q.macdHistogram);
+
         if (q.macdHistogram > 0 && growing) {
-            score += 2;
-            details.push('MACD histogram ขาขึ้นและเร่งตัว');
-            reasoningPoints.push({ label: 'MACD', value: `MACD Histogram +${q.macdHistogram.toFixed(3)} และเพิ่มขึ้น → โมเมนตัมขาขึ้นเร่งตัว สัญญาณซื้อแข็งแกร่ง`, signal: 'positive' });
-        } else if (q.macdHistogram > 0) {
-            score += 1;
-            reasoningPoints.push({ label: 'MACD', value: `MACD Histogram +${q.macdHistogram.toFixed(3)} → โมเมนตัมบวก แต่เริ่มชะลอ`, signal: 'positive' });
+            signals.push({ score: 1, weight: 3.0 * momentumMul, label: 'MACD', value: `MACD Histogram +${q.macdHistogram.toFixed(4)} และกำลังเพิ่ม → Bullish Momentum เร่งตัว สัญญาณซื้อแข็งแกร่ง`, signal: 'positive' });
+        } else if (q.macdHistogram > 0 && !growing) {
+            signals.push({ score: 0.5, weight: 2.0 * momentumMul, label: 'MACD', value: `MACD Histogram +${q.macdHistogram.toFixed(4)} แต่ชะลอตัว → Momentum บวกแต่เริ่มอ่อนแรง`, signal: 'positive' });
         } else if (q.macdHistogram < 0 && !growing) {
-            score -= 2;
-            details.push('MACD histogram ขาลงและเร่งตัว');
-            reasoningPoints.push({ label: 'MACD', value: `MACD Histogram ${q.macdHistogram.toFixed(3)} และลดลง → โมเมนตัมขาลงเร่งตัว สัญญาณขายแข็งแกร่ง`, signal: 'negative' });
+            signals.push({ score: -1, weight: 3.0 * momentumMul, label: 'MACD', value: `MACD Histogram ${q.macdHistogram.toFixed(4)} และกำลังลด → Bearish Momentum เร่งตัว สัญญาณขายแข็งแกร่ง`, signal: 'negative' });
         } else {
-            score -= 1;
-            reasoningPoints.push({ label: 'MACD', value: `MACD Histogram ${q.macdHistogram.toFixed(3)} → โมเมนตัมลบ แต่เริ่มชะลอ`, signal: 'negative' });
+            signals.push({ score: -0.5, weight: 2.0 * momentumMul, label: 'MACD', value: `MACD Histogram ${q.macdHistogram.toFixed(4)} แต่ชะลอตัว → Momentum ลบแต่เริ่มอ่อนแรง`, signal: 'negative' });
         }
     }
 
-    // ─── 3. RSI + BOLLINGER ────────────────────────────────────────────────────
-    if (q.rsi) {
-        factorsCount++;
-        if (q.rsi > 60) {
-            score += 1;
-            reasoningPoints.push({ label: 'RSI', value: `RSI ${q.rsi.toFixed(1)} → แรงซื้อครอบงำ (>60) โมเมนตัมบวก`, signal: 'positive' });
-        } else if (q.rsi < 40) {
-            score -= 1;
-            reasoningPoints.push({ label: 'RSI', value: `RSI ${q.rsi.toFixed(1)} → แรงขายครอบงำ (<40) โมเมนตัมลบ`, signal: 'negative' });
+    // ─── 3. RSI + Divergence ──────────────────────────────────────────────────
+    if (q.rsi !== undefined) {
+        let rsiScore = 0;
+        let rsiLabel = '';
+        let rsiSig: 'positive' | 'negative' | 'neutral' = 'neutral';
+
+        if (q.rsi >= 50 && q.rsi <= 70) {
+            rsiScore = (q.rsi - 50) / 20; // 0→1
+            rsiLabel = `RSI ${q.rsi.toFixed(1)} → Bullish Zone (50–70) โมเมนตัมดี`;
+            rsiSig = 'positive';
+        } else if (q.rsi > 70 && q.rsi <= 80) {
+            rsiScore = 0.3; // Overbought but momentum
+            rsiLabel = `RSI ${q.rsi.toFixed(1)} → Overbought แต่ Momentum แข็งแกร่ง อาจวิ่งต่อ`;
+            rsiSig = 'positive';
+        } else if (q.rsi > 80) {
+            rsiScore = -0.5; // Extreme overbought = risk
+            rsiLabel = `RSI ${q.rsi.toFixed(1)} > 80 → Extreme Overbought ความเสี่ยง Reversal สูง`;
+            rsiSig = 'negative';
+        } else if (q.rsi <= 30 && q.rsi > 20) {
+            rsiScore = 0.5; // Oversold bounce
+            rsiLabel = `RSI ${q.rsi.toFixed(1)} → Oversold Zone โอกาสรีบาวด์`;
+            rsiSig = 'positive';
+        } else if (q.rsi <= 20) {
+            rsiScore = 1.0; // Extreme oversold
+            rsiLabel = `RSI ${q.rsi.toFixed(1)} < 20 → Extreme Oversold โอกาสรีบาวด์แรง`;
+            rsiSig = 'positive';
         } else {
-            reasoningPoints.push({ label: 'RSI', value: `RSI ${q.rsi.toFixed(1)} → โซน Neutral (40–60) ยังไม่มีสัญญาณชัด`, signal: 'neutral' });
+            rsiScore = (q.rsi - 40) / 10 * 0.5; // -0.5 to 0.5 in neutral zone
+            rsiLabel = `RSI ${q.rsi.toFixed(1)} → Neutral Zone (30–50) รอสัญญาณชัด`;
+            rsiSig = 'neutral';
         }
-        // Short-term: overbought/oversold are weaker signals — momentum tends to persist
-        if (q.rsi > 80) { score -= 0.5; reasoningPoints.push({ label: 'RSI Overbought', value: `RSI ${q.rsi.toFixed(1)} > 80 → Overbought สุดขีด แต่ Momentum อาจต่อ`, signal: 'negative' }); }
-        if (q.rsi < 20) { score += 0.8; reasoningPoints.push({ label: 'RSI Oversold', value: `RSI ${q.rsi.toFixed(1)} < 20 → Oversold สุดขีด โอกาสรีบาวด์`, signal: 'positive' }); }
+
+        signals.push({ score: rsiScore, weight: 2.5 * momentumMul, label: 'RSI', value: rsiLabel, signal: rsiSig });
+
+        // RSI Divergence
+        if (q.recentCloses && q.recentCloses.length >= 5) {
+            const div = detectRSIDivergence(q.recentCloses, q.rsi);
+            if (div === 'bearish') {
+                signals.push({ score: -0.8, weight: 2.0, label: 'RSI Divergence ⚠', value: `Bearish Divergence: ราคาทำ High ใหม่ แต่ RSI อ่อนแรงลง → สัญญาณเตือนกลับตัว`, signal: 'negative' });
+            } else if (div === 'bullish') {
+                signals.push({ score: 0.8, weight: 2.0, label: 'RSI Divergence ✓', value: `Bullish Divergence: ราคาทำ Low ใหม่ แต่ RSI ฟื้นตัว → สัญญาณกลับตัวขาขึ้น`, signal: 'positive' });
+            }
+        }
     }
+
+    // ─── 4. Bollinger Bands (Squeeze & Breakout) ──────────────────────────────
     if (q.lowerBB && q.upperBB) {
-        factorsCount++;
-        if (q.price <= q.lowerBB) {
-            score += 0.5;
-            reasoningPoints.push({ label: 'Bollinger Bands', value: `ราคาแตะขอบล่าง BB $${q.lowerBB.toFixed(2)} → อาจรีบาวด์ แต่ Breakout ลงก็เป็นไปได้`, signal: 'positive' });
-        } else if (q.price >= q.upperBB) {
-            score -= 0.5;
-            reasoningPoints.push({ label: 'Bollinger Bands', value: `ราคาแตะขอบบน BB $${q.upperBB.toFixed(2)} → อาจปรับฐาน แต่ Breakout ขึ้นก็เป็นไปได้`, signal: 'negative' });
+        const bbWidth = (q.upperBB - q.lowerBB) / q.price;
+        const bbPos = (q.price - q.lowerBB) / (q.upperBB - q.lowerBB);
+        const tight = bbWidth < 0.06; // Bollinger Squeeze
+
+        if (q.price >= q.upperBB) {
+            signals.push({ score: tight ? 1.0 : -0.5, weight: 1.8, label: 'Bollinger Bands', value: `${tight ? '🔥 BB Squeeze Breakout ขึ้น!' : 'ราคาแตะขอบบน BB'} $${q.upperBB.toFixed(2)} → ${tight ? 'แรงซื้อ Breakout หลัง Squeeze' : 'Overbought ระยะสั้น'}`, signal: tight ? 'positive' : 'negative' });
+        } else if (q.price <= q.lowerBB) {
+            signals.push({ score: tight ? -1.0 : 0.5, weight: 1.8, label: 'Bollinger Bands', value: `${tight ? '💥 BB Squeeze Breakout ลง!' : 'ราคาแตะขอบล่าง BB'} $${q.lowerBB.toFixed(2)} → ${tight ? 'แรงขาย Breakout หลัง Squeeze' : 'Oversold รีบาวด์ได้'}`, signal: tight ? 'negative' : 'positive' });
         } else {
-            const bbMid = (q.lowerBB + q.upperBB) / 2;
-            const sig = q.price > bbMid ? 'positive' : 'negative';
-            reasoningPoints.push({ label: 'Bollinger Bands', value: `ราคาอยู่${q.price > bbMid ? 'เหนือ' : 'ต่ำกว่า'}กลาง BB — ช่วง $${q.lowerBB.toFixed(2)}–$${q.upperBB.toFixed(2)}`, signal: sig });
+            const posLabel = bbPos > 0.7 ? 'ใกล้ขอบบน' : bbPos < 0.3 ? 'ใกล้ขอบล่าง' : 'กลาง Band';
+            signals.push({ score: bbPos > 0.5 ? 0.3 : -0.3, weight: 1.0, label: 'Bollinger Bands', value: `ราคาอยู่${posLabel} BB (${(bbPos * 100).toFixed(0)}%) ช่วง $${q.lowerBB.toFixed(2)}–$${q.upperBB.toFixed(2)}${tight ? ' ⚡ Squeeze!' : ''}`, signal: bbPos > 0.6 ? 'positive' : bbPos < 0.4 ? 'negative' : 'neutral' });
         }
     }
 
-    // ─── 4. CANDLESTICK PATTERNS ───────────────────────────────────────────────
-    if (q.recentOpens && q.recentHighs && q.recentLows && q.recentCloses &&
-        q.recentCloses.length >= 2) {
-        factorsCount++;
-        const candles: Candle[] = q.recentCloses.map((c, i) => ({
-            o: q.recentOpens![i], h: q.recentHighs![i],
-            l: q.recentLows![i], c
-        }));
+    // ─── 5. Candlestick Patterns (HIGH WEIGHT — price action) ────────────────
+    if (q.recentOpens && q.recentHighs && q.recentLows && q.recentCloses && q.recentCloses.length >= 2) {
+        const candles: Candle[] = q.recentCloses.map((c, i) => ({ o: q.recentOpens![i], h: q.recentHighs![i], l: q.recentLows![i], c }));
         const pattern = detectCandlestickPattern(candles);
         if (pattern) {
+            const w = 2.5;
             if (pattern.signal === 'bullish') {
-                score += 1.5;
-                details.push(pattern.name);
-                reasoningPoints.push({ label: 'Candlestick Pattern', value: `${pattern.name} → รูปแบบเทียนสัญญาณขาขึ้น`, signal: 'positive' });
+                signals.push({ score: pattern.strength, weight: w, label: 'Candlestick Pattern', value: `✅ ${pattern.name} → Price Action สัญญาณซื้อ (Strength: ${(pattern.strength * 100).toFixed(0)}%)`, signal: 'positive' });
             } else if (pattern.signal === 'bearish') {
-                score -= 1.5;
-                details.push(pattern.name);
-                reasoningPoints.push({ label: 'Candlestick Pattern', value: `${pattern.name} → รูปแบบเทียนสัญญาณขาลง`, signal: 'negative' });
+                signals.push({ score: -pattern.strength, weight: w, label: 'Candlestick Pattern', value: `🔴 ${pattern.name} → Price Action สัญญาณขาย (Strength: ${(pattern.strength * 100).toFixed(0)}%)`, signal: 'negative' });
             } else {
-                reasoningPoints.push({ label: 'Candlestick Pattern', value: `${pattern.name} → ตลาดลังเล รอสัญญาณยืนยัน`, signal: 'neutral' });
+                signals.push({ score: 0, weight: w * 0.5, label: 'Candlestick Pattern', value: `⚪ ${pattern.name} → ตลาดลังเล รอสัญญาณยืนยัน`, signal: 'neutral' });
             }
         } else {
-            reasoningPoints.push({ label: 'Candlestick Pattern', value: `ไม่พบรูปแบบเทียนพิเศษ → Price Action ปกติ`, signal: 'neutral' });
+            signals.push({ score: 0, weight: 0.5, label: 'Candlestick Pattern', value: 'ไม่พบรูปแบบเทียนพิเศษ → Price Action ปกติ', signal: 'neutral' });
         }
     }
 
-    // ─── 5. VOLUME ANALYSIS ────────────────────────────────────────────────────
+    // ─── 6. Volume Analysis (Smart Money) ────────────────────────────────────
     if (q.volume && q.avgVolume10d && q.avgVolume10d > 0) {
-        factorsCount++;
         const vr = q.volume / q.avgVolume10d;
         const up = q.changePercent > 0;
-        if (vr > 1.5 && up) {
-            score += 1.5; details.push('Volume spike ยืนยันแรงซื้อ');
-            reasoningPoints.push({ label: 'Volume', value: `Volume ${vr.toFixed(1)}x ค่าเฉลี่ย + ราคาขึ้น → แรงซื้อแท้จริง ยืนยันเทรนด์`, signal: 'positive' });
+
+        if (vr > 2.0 && up) {
+            signals.push({ score: 1, weight: 3.0, label: 'Volume (Smart Money)', value: `🔥 Volume ${vr.toFixed(1)}x ค่าเฉลี่ย + ราคาขึ้น → Institutional Buying แท้จริง`, signal: 'positive' });
+        } else if (vr > 2.0 && !up) {
+            signals.push({ score: -1, weight: 3.0, label: 'Volume (Smart Money)', value: `💥 Volume ${vr.toFixed(1)}x ค่าเฉลี่ย + ราคาลง → Institutional Selling แท้จริง`, signal: 'negative' });
+        } else if (vr > 1.5 && up) {
+            signals.push({ score: 0.7, weight: 2.0, label: 'Volume', value: `Volume ${vr.toFixed(1)}x ค่าเฉลี่ย + ราคาขึ้น → แรงซื้อยืนยันเทรนด์`, signal: 'positive' });
         } else if (vr > 1.5 && !up) {
-            score -= 1.5; details.push('Volume spike ยืนยันแรงขาย');
-            reasoningPoints.push({ label: 'Volume', value: `Volume ${vr.toFixed(1)}x ค่าเฉลี่ย + ราคาลง → แรงขายแท้จริง`, signal: 'negative' });
-        } else if (vr < 0.7) {
-            reasoningPoints.push({ label: 'Volume', value: `Volume ต่ำ (${vr.toFixed(1)}x) → การเคลื่อนไหวอาจไม่ยั่งยืน`, signal: 'neutral' });
+            signals.push({ score: -0.7, weight: 2.0, label: 'Volume', value: `Volume ${vr.toFixed(1)}x ค่าเฉลี่ย + ราคาลง → แรงขายยืนยันเทรนด์`, signal: 'negative' });
+        } else if (vr < 0.6) {
+            signals.push({ score: 0, weight: 1.0, label: 'Volume', value: `Volume ต่ำ (${vr.toFixed(1)}x) → การเคลื่อนไหวอาจไม่ sustained`, signal: 'neutral' });
         } else {
-            reasoningPoints.push({ label: 'Volume', value: `Volume ปกติ (${vr.toFixed(1)}x) → ไม่มีสัญญาณพิเศษ`, signal: 'neutral' });
+            signals.push({ score: 0, weight: 0.5, label: 'Volume', value: `Volume ปกติ (${vr.toFixed(1)}x) → ไม่มีสัญญาณ Institutional พิเศษ`, signal: 'neutral' });
         }
     }
 
-    // ─── 6. EARNINGS SURPRISE ──────────────────────────────────────────────────
-    if (q.earningsSurprise !== undefined) {
-        factorsCount++;
-        if (q.earningsSurprise > 5) {
-            score += 1.5;
-            details.push(`Earnings beat +${q.earningsSurprise.toFixed(1)}%`);
-            reasoningPoints.push({ label: 'Earnings Surprise', value: `กำไรไตรมาสล่าสุดเกินคาด +${q.earningsSurprise.toFixed(1)}% → Momentum หลัง Earnings แข็งแกร่ง`, signal: 'positive' });
-        } else if (q.earningsSurprise > 0) {
-            score += 0.5;
-            reasoningPoints.push({ label: 'Earnings Surprise', value: `กำไรเกินคาดเล็กน้อย +${q.earningsSurprise.toFixed(1)}% → บวกเล็กน้อยต่อ Sentiment`, signal: 'positive' });
-        } else if (q.earningsSurprise < -5) {
-            score -= 1.5;
-            details.push(`Earnings miss ${q.earningsSurprise.toFixed(1)}%`);
-            reasoningPoints.push({ label: 'Earnings Surprise', value: `กำไรต่ำกว่าคาด ${q.earningsSurprise.toFixed(1)}% → กดดันราคาระยะสั้น`, signal: 'negative' });
-        } else {
-            reasoningPoints.push({ label: 'Earnings Surprise', value: `กำไรใกล้เคียงคาด (${q.earningsSurprise.toFixed(1)}%) → ไม่มีผลพิเศษต่อราคา`, signal: 'neutral' });
-        }
-    }
-
-    // ─── 7. INSIDER ACTIVITY ──────────────────────────────────────────────────
-    if (q.insiderNet !== undefined) {
-        factorsCount++;
-        if (q.insiderNet > 100000) {
-            score += 1;
-            reasoningPoints.push({ label: 'Insider Activity', value: `ผู้บริหารซื้อสุทธิ ${(q.insiderNet / 1e6).toFixed(2)}M หุ้น (6 เดือน) → Smart Money เชื่อมั่นในบริษัท`, signal: 'positive' });
-        } else if (q.insiderNet < -100000) {
-            score -= 0.8;
-            reasoningPoints.push({ label: 'Insider Activity', value: `ผู้บริหารขายสุทธิ ${(Math.abs(q.insiderNet) / 1e6).toFixed(2)}M หุ้น (6 เดือน) → อาจมองราคาแพงเกิน`, signal: 'negative' });
-        } else {
-            reasoningPoints.push({ label: 'Insider Activity', value: `การซื้อขายของ Insider สมดุล → ไม่มีสัญญาณพิเศษ`, signal: 'neutral' });
-        }
-    }
-
-    // ─── 8. RELATIVE STRENGTH vs SPY ─────────────────────────────────────────
+    // ─── 7. Relative Strength vs SPY ─────────────────────────────────────────
     if (q.spyChangePercent !== undefined) {
-        factorsCount++;
         const rs = q.changePercent - q.spyChangePercent;
-        if (rs > 1.5) {
-            score += 1;
-            reasoningPoints.push({ label: 'Relative Strength vs SPY', value: `แข็งแกร่งกว่า S&P500 +${rs.toFixed(2)}% → เงินไหลเข้าหุ้นนี้โดยเฉพาะ`, signal: 'positive' });
-        } else if (rs < -1.5) {
-            score -= 1;
-            reasoningPoints.push({ label: 'Relative Strength vs SPY', value: `อ่อนแอกว่า S&P500 ${rs.toFixed(2)}% → เงินไหลออก Underperform`, signal: 'negative' });
+        if (rs > 2) {
+            signals.push({ score: 1, weight: 2.0, label: 'Relative Strength vs SPY', value: `แข็งแกร่งกว่า S&P500 มาก +${rs.toFixed(2)}% → Money Flow เข้าหุ้นนี้โดยเฉพาะ`, signal: 'positive' });
+        } else if (rs > 0.8) {
+            signals.push({ score: 0.5, weight: 1.5, label: 'Relative Strength vs SPY', value: `แข็งแกร่งกว่า S&P500 +${rs.toFixed(2)}% → Sector/Stock Rotation บวก`, signal: 'positive' });
+        } else if (rs < -2) {
+            signals.push({ score: -1, weight: 2.0, label: 'Relative Strength vs SPY', value: `อ่อนแอกว่า S&P500 มาก ${rs.toFixed(2)}% → Money Flow ออก Underperform`, signal: 'negative' });
+        } else if (rs < -0.8) {
+            signals.push({ score: -0.5, weight: 1.5, label: 'Relative Strength vs SPY', value: `อ่อนแอกว่า S&P500 ${rs.toFixed(2)}% → Sector Rotation ออก`, signal: 'negative' });
         } else {
-            reasoningPoints.push({ label: 'Relative Strength vs SPY', value: `Relative Strength ${rs >= 0 ? '+' : ''}${rs.toFixed(2)}% vs SPY → เคลื่อนไหวใกล้เคียงตลาด`, signal: 'neutral' });
+            signals.push({ score: 0, weight: 0.5, label: 'Relative Strength vs SPY', value: `Relative Strength ${rs >= 0 ? '+' : ''}${rs.toFixed(2)}% vs SPY → เคลื่อนไหวใกล้เคียงตลาด`, signal: 'neutral' });
         }
     }
 
-    // ─── 9. 52-WEEK POSITION ──────────────────────────────────────────────────
+    // ─── 8. 52-Week Position ─────────────────────────────────────────────────
     if (q.yearHigh && q.yearLow) {
-        const range = q.yearHigh - q.yearLow;
-        const position = range > 0 ? ((q.price - q.yearLow) / range) * 100 : 50;
-        if (position >= 85) {
-            score -= 0.8;
-            reasoningPoints.push({ label: '52-Week Position', value: `ราคาอยู่ที่ ${position.toFixed(0)}% ของช่วง 52 สัปดาห์ → ใกล้ High แนวต้านแข็ง`, signal: 'negative' });
-        } else if (position <= 15) {
-            score += 0.8;
-            reasoningPoints.push({ label: '52-Week Position', value: `ราคาอยู่ที่ ${position.toFixed(0)}% ของช่วง 52 สัปดาห์ → ใกล้ Low Upside สูง`, signal: 'positive' });
+        const range52 = q.yearHigh - q.yearLow;
+        const pos = range52 > 0 ? ((q.price - q.yearLow) / range52) * 100 : 50;
+        const nearHigh = pos >= 85;
+        const nearLow = pos <= 15;
+        if (nearHigh) {
+            signals.push({ score: -0.6, weight: 1.5, label: '52-Week Position', value: `ราคาอยู่ที่ Top ${pos.toFixed(0)}% ของ 52 สัปดาห์ → แนวต้านแข็ง แต่ Breakout ก็เป็นไปได้`, signal: 'negative' });
+        } else if (nearLow) {
+            signals.push({ score: 0.8, weight: 1.5, label: '52-Week Position', value: `ราคาอยู่ที่ Bottom ${pos.toFixed(0)}% ของ 52 สัปดาห์ → Upside Potential สูง แนวรับแข็ง`, signal: 'positive' });
         } else {
-            reasoningPoints.push({ label: '52-Week Position', value: `ราคาที่ ${position.toFixed(0)}% ของช่วง 52 สัปดาห์ (High $${q.yearHigh.toFixed(0)} / Low $${q.yearLow.toFixed(0)})`, signal: position > 50 ? 'positive' : 'neutral' });
+            signals.push({ score: pos > 60 ? 0.2 : pos < 40 ? -0.2 : 0, weight: 0.8, label: '52-Week Position', value: `ราคาที่ ${pos.toFixed(0)}% ของ 52 สัปดาห์ (H$${q.yearHigh.toFixed(0)} / L$${q.yearLow.toFixed(0)})`, signal: pos > 50 ? 'positive' : 'neutral' });
         }
     }
 
-    // ─── 10. ANALYST CONSENSUS ────────────────────────────────────────────────
+    // ─── 9. Analyst Consensus ─────────────────────────────────────────────────
     if (q.analystBuy !== undefined && q.analystHold !== undefined && q.analystSell !== undefined) {
         const total = q.analystBuy + q.analystHold + q.analystSell;
-        if (total > 0) {
-            factorsCount++;
+        if (total >= 3) {
             const buyPct = (q.analystBuy / total) * 100;
             const sellPct = (q.analystSell / total) * 100;
-            if (buyPct >= 65) {
-                score += 1.5; details.push(`Wall Street consensus: Buy ${q.analystBuy}/${total}`);
-                reasoningPoints.push({ label: 'Analyst Consensus', value: `Buy ${q.analystBuy} / Hold ${q.analystHold} / Sell ${q.analystSell} → ${buyPct.toFixed(0)}% นักวิเคราะห์ให้คะแนน Buy`, signal: 'positive' });
+            if (buyPct >= 70) {
+                signals.push({ score: 1, weight: 1.8 * fundamentalMul, label: 'Analyst Consensus', value: `Wall Street: Buy ${q.analystBuy}/${total} (${buyPct.toFixed(0)}%) → Consensus แข็งแกร่งมาก`, signal: 'positive' });
+            } else if (buyPct >= 55) {
+                signals.push({ score: 0.5, weight: 1.5 * fundamentalMul, label: 'Analyst Consensus', value: `Wall Street: Buy ${q.analystBuy} / Hold ${q.analystHold} / Sell ${q.analystSell} → Moderate Buy`, signal: 'positive' });
             } else if (sellPct >= 40) {
-                score -= 1.5;
-                reasoningPoints.push({ label: 'Analyst Consensus', value: `Buy ${q.analystBuy} / Hold ${q.analystHold} / Sell ${q.analystSell} → ${sellPct.toFixed(0)}% ให้คะแนน Sell`, signal: 'negative' });
+                signals.push({ score: -1, weight: 1.8 * fundamentalMul, label: 'Analyst Consensus', value: `Wall Street: ${sellPct.toFixed(0)}% Sell Rating → นักวิเคราะห์ไม่ชอบ`, signal: 'negative' });
             } else {
-                reasoningPoints.push({ label: 'Analyst Consensus', value: `Buy ${q.analystBuy} / Hold ${q.analystHold} / Sell ${q.analystSell} → Mixed consensus`, signal: 'neutral' });
+                signals.push({ score: 0, weight: 0.8, label: 'Analyst Consensus', value: `Buy ${q.analystBuy} / Hold ${q.analystHold} / Sell ${q.analystSell} → Mixed Consensus`, signal: 'neutral' });
             }
         }
     }
 
-    // ─── 11. BETA ─────────────────────────────────────────────────────────────
-    if (q.beta !== undefined && q.beta > 0) {
-        if (q.beta > 1.5) {
-            reasoningPoints.push({ label: 'Beta (ความเสี่ยง)', value: `Beta ${q.beta.toFixed(2)} → High Volatility ${((q.beta - 1) * 100).toFixed(0)}% ผันผวนกว่าตลาด`, signal: 'negative' });
-        } else if (q.beta < 0.8) {
-            reasoningPoints.push({ label: 'Beta (ความเสี่ยง)', value: `Beta ${q.beta.toFixed(2)} → Defensive Stock เสถียร`, signal: 'positive' });
+    // ─── 10. Earnings Surprise ────────────────────────────────────────────────
+    if (q.earningsSurprise !== undefined) {
+        if (q.earningsSurprise > 10) {
+            signals.push({ score: 1, weight: 2.0 * fundamentalMul, label: 'Earnings Surprise', value: `กำไรเกินคาด +${q.earningsSurprise.toFixed(1)}% → Strong Beat Post-Earnings Momentum`, signal: 'positive' });
+        } else if (q.earningsSurprise > 3) {
+            signals.push({ score: 0.5, weight: 1.5 * fundamentalMul, label: 'Earnings Surprise', value: `กำไรเกินคาด +${q.earningsSurprise.toFixed(1)}% → Moderate Beat`, signal: 'positive' });
+        } else if (q.earningsSurprise < -10) {
+            signals.push({ score: -1, weight: 2.0 * fundamentalMul, label: 'Earnings Surprise', value: `กำไรต่ำกว่าคาด ${q.earningsSurprise.toFixed(1)}% → กดดันราคาหนัก`, signal: 'negative' });
+        } else if (q.earningsSurprise < -3) {
+            signals.push({ score: -0.5, weight: 1.5 * fundamentalMul, label: 'Earnings Surprise', value: `กำไรต่ำกว่าคาดเล็กน้อย ${q.earningsSurprise.toFixed(1)}% → กดดันระยะสั้น`, signal: 'negative' });
         } else {
-            reasoningPoints.push({ label: 'Beta (ความเสี่ยง)', value: `Beta ${q.beta.toFixed(2)} → ผันผวนใกล้เคียงตลาด`, signal: 'neutral' });
+            signals.push({ score: 0, weight: 0.5, label: 'Earnings Surprise', value: `กำไรใกล้เคียงคาด (${q.earningsSurprise.toFixed(1)}%) → ไม่มีผล Catalyst พิเศษ`, signal: 'neutral' });
         }
     }
 
-    // ─── 12. FUNDAMENTALS ──────────────────────────────────────────────────────
+    // ─── 11. Insider Activity ─────────────────────────────────────────────────
+    if (q.insiderNet !== undefined) {
+        if (q.insiderNet > 500000) {
+            signals.push({ score: 1, weight: 1.5 * fundamentalMul, label: 'Insider Activity', value: `ผู้บริหารซื้อสุทธิ ${(q.insiderNet / 1e6).toFixed(2)}M หุ้น → Smart Money ซื้อหนัก`, signal: 'positive' });
+        } else if (q.insiderNet > 100000) {
+            signals.push({ score: 0.5, weight: 1.2 * fundamentalMul, label: 'Insider Activity', value: `ผู้บริหารซื้อสุทธิ ${(q.insiderNet / 1e6).toFixed(2)}M หุ้น → Insider เชื่อมั่น`, signal: 'positive' });
+        } else if (q.insiderNet < -500000) {
+            signals.push({ score: -0.8, weight: 1.5 * fundamentalMul, label: 'Insider Activity', value: `ผู้บริหารขายสุทธิ ${(Math.abs(q.insiderNet) / 1e6).toFixed(2)}M หุ้น → Insider ลดการถือหุ้น`, signal: 'negative' });
+        } else {
+            signals.push({ score: 0, weight: 0.5, label: 'Insider Activity', value: `Insider Activity สมดุล → ไม่มีสัญญาณ Smart Money พิเศษ`, signal: 'neutral' });
+        }
+    }
+
+    // ─── 12. Fundamentals ─────────────────────────────────────────────────────
     if (q.pe && q.pe > 0) {
-        if (q.pe > 50) { score -= 0.5; reasoningPoints.push({ label: 'P/E Ratio', value: `P/E ${q.pe.toFixed(1)} → แพงเกินมูลค่าจริง`, signal: 'negative' }); }
-        else if (q.pe < 15) { score += 0.5; reasoningPoints.push({ label: 'P/E Ratio', value: `P/E ${q.pe.toFixed(1)} → Undervalued น่าสนใจ`, signal: 'positive' }); }
-        else { reasoningPoints.push({ label: 'P/E Ratio', value: `P/E ${q.pe.toFixed(1)} → สมเหตุสมผล`, signal: 'neutral' }); }
+        if (q.pe > 60) signals.push({ score: -0.6, weight: 1.2 * fundamentalMul, label: 'P/E Ratio', value: `P/E ${q.pe.toFixed(1)} → แพงมาก Valuation Risk สูง`, signal: 'negative' });
+        else if (q.pe > 30) signals.push({ score: -0.2, weight: 0.8 * fundamentalMul, label: 'P/E Ratio', value: `P/E ${q.pe.toFixed(1)} → ค่อนข้างแพง แต่ยังยอมรับได้สำหรับ Growth Stock`, signal: 'neutral' });
+        else if (q.pe < 12) signals.push({ score: 0.7, weight: 1.2 * fundamentalMul, label: 'P/E Ratio', value: `P/E ${q.pe.toFixed(1)} → Undervalued น่าสนใจสำหรับ Value Investor`, signal: 'positive' });
+        else signals.push({ score: 0, weight: 0.8 * fundamentalMul, label: 'P/E Ratio', value: `P/E ${q.pe.toFixed(1)} → Valuation สมเหตุสมผล`, signal: 'neutral' });
     }
     if (q.revenueGrowth !== undefined) {
-        if (q.revenueGrowth > 15) { score += 0.8; reasoningPoints.push({ label: 'Revenue Growth', value: `รายได้โต +${q.revenueGrowth.toFixed(1)}% YoY → Fundamental แข็งแกร่ง`, signal: 'positive' }); }
-        else if (q.revenueGrowth < 0) { score -= 0.8; reasoningPoints.push({ label: 'Revenue Growth', value: `รายได้ลด ${q.revenueGrowth.toFixed(1)}% YoY → Fundamental อ่อนแอ`, signal: 'negative' }); }
-        else { reasoningPoints.push({ label: 'Revenue Growth', value: `รายได้โต +${q.revenueGrowth.toFixed(1)}% YoY → ปานกลาง`, signal: 'neutral' }); }
+        if (q.revenueGrowth > 20) signals.push({ score: 0.7, weight: 1.0 * fundamentalMul, label: 'Revenue Growth', value: `รายได้โต +${q.revenueGrowth.toFixed(1)}% YoY → Hyper Growth`, signal: 'positive' });
+        else if (q.revenueGrowth > 8) signals.push({ score: 0.3, weight: 0.8 * fundamentalMul, label: 'Revenue Growth', value: `รายได้โต +${q.revenueGrowth.toFixed(1)}% YoY → Healthy Growth`, signal: 'positive' });
+        else if (q.revenueGrowth < -5) signals.push({ score: -0.7, weight: 1.0 * fundamentalMul, label: 'Revenue Growth', value: `รายได้ลด ${q.revenueGrowth.toFixed(1)}% YoY → Fundamental อ่อนแอ`, signal: 'negative' });
+        else signals.push({ score: 0, weight: 0.5, label: 'Revenue Growth', value: `รายได้โต +${q.revenueGrowth.toFixed(1)}% YoY → ปานกลาง`, signal: 'neutral' });
     }
     if (q.netMargin !== undefined) {
-        if (q.netMargin > 20) { score += 0.5; reasoningPoints.push({ label: 'Net Margin', value: `กำไรสุทธิ ${q.netMargin.toFixed(1)}% → ความสามารถทำกำไรสูงมาก`, signal: 'positive' }); }
-        else if (q.netMargin < 5) { score -= 0.3; reasoningPoints.push({ label: 'Net Margin', value: `กำไรสุทธิ ${q.netMargin.toFixed(1)}% → Margin ต่ำ`, signal: 'negative' }); }
-        else { reasoningPoints.push({ label: 'Net Margin', value: `กำไรสุทธิ ${q.netMargin.toFixed(1)}% → ระดับปกติ`, signal: 'neutral' }); }
+        if (q.netMargin > 25) signals.push({ score: 0.5, weight: 0.8 * fundamentalMul, label: 'Net Margin', value: `กำไรสุทธิ ${q.netMargin.toFixed(1)}% → Excellent Profitability`, signal: 'positive' });
+        else if (q.netMargin < 3) signals.push({ score: -0.3, weight: 0.8 * fundamentalMul, label: 'Net Margin', value: `กำไรสุทธิ ${q.netMargin.toFixed(1)}% → Margin ต่ำมาก`, signal: 'negative' });
+        else signals.push({ score: 0, weight: 0.5, label: 'Net Margin', value: `กำไรสุทธิ ${q.netMargin.toFixed(1)}% → ระดับปกติ`, signal: 'neutral' });
     }
 
-    // ─── 13. PRICE ACTION ─────────────────────────────────────────────────────
-    if (Math.abs(q.changePercent) > 0.3) {
+    // ─── 13. Beta / Risk Regime ───────────────────────────────────────────────
+    if (q.beta !== undefined && q.beta > 0) {
+        const betaLabel = q.beta > 2 ? 'High Risk — Speculative' : q.beta > 1.5 ? 'High Volatility' : q.beta < 0.6 ? 'Defensive — เสถียร' : 'ปกติ';
+        signals.push({ score: q.beta > 1.5 ? -0.3 : q.beta < 0.6 ? 0.2 : 0, weight: 0.8, label: 'Beta (Volatility Risk)', value: `Beta ${q.beta.toFixed(2)} → ${betaLabel}`, signal: q.beta > 1.5 ? 'negative' : q.beta < 0.6 ? 'positive' : 'neutral' });
+    }
+
+    // ─── 14. Today's Price Action ─────────────────────────────────────────────
+    if (Math.abs(q.changePercent) > 0.2) {
         const up = q.changePercent > 0;
-        score += up ? 0.5 : -0.5;
-        reasoningPoints.push({ label: 'Price Action วันนี้', value: `${up ? '+' : ''}${q.changePercent.toFixed(2)}% → ${up ? 'แรงซื้อเข้ามา' : 'แรงขายออก'}`, signal: up ? 'positive' : 'negative' });
+        const strength = Math.min(Math.abs(q.changePercent) / 3, 1);
+        signals.push({ score: up ? strength : -strength, weight: 1.5, label: 'Price Action วันนี้', value: `${up ? '+' : ''}${q.changePercent.toFixed(2)}% → ${up ? 'Momentum ขาขึ้น' : 'Pressure ขาลง'}`, signal: up ? 'positive' : 'negative' });
     } else {
-        reasoningPoints.push({ label: 'Price Action วันนี้', value: `${q.changePercent >= 0 ? '+' : ''}${q.changePercent.toFixed(2)}% → ตลาดลังเล`, signal: 'neutral' });
+        signals.push({ score: 0, weight: 0.5, label: 'Price Action วันนี้', value: `${q.changePercent >= 0 ? '+' : ''}${q.changePercent.toFixed(2)}% → Consolidation ราคาทรง`, signal: 'neutral' });
     }
 
-    // ─── FINAL SCORING ────────────────────────────────────────────────────────
-    // Lower threshold = fewer Neutral predictions = higher accuracy
-    // (stocks rarely stay flat over 3 days, so Neutral is almost always wrong)
-    const threshold = factorsCount >= 5 ? 1.5 : factorsCount >= 3 ? 1.0 : 0.8;
-    const trend = score >= threshold ? 'UP' : score <= -threshold ? 'DOWN' : 'Neutral';
+    // ─── WEIGHTED SCORE CALCULATION ───────────────────────────────────────────
+    let weightedSum = 0;
+    let totalWeight = 0;
+    for (const s of signals) {
+        weightedSum += s.score * s.weight;
+        totalWeight += s.weight;
+    }
+    const normalizedScore = totalWeight > 0 ? weightedSum / totalWeight : 0;
 
-    const absoluteScore = Math.abs(score);
-    const maxScore = 16; // theoretical max with alignment bonus
-    const confidenceRange = trend === 'Neutral' ? [44, 56] : [56, 92];
-    const confidence = confidenceRange[0] + (Math.min(absoluteScore / maxScore, 1) * (confidenceRange[1] - confidenceRange[0]));
+    // Signal Confluence — count how many signals agree
+    const bullSignals = signals.filter(s => s.signal === 'positive').length;
+    const bearSignals = signals.filter(s => s.signal === 'negative').length;
+    const totalSignals = signals.length;
+    const confluence = Math.max(bullSignals, bearSignals) / totalSignals;
 
-    // Dynamic Target — Beta-adjusted
-    const betaMul = q.beta ? Math.max(0.5, Math.min(q.beta, 2.5)) : 1.0;
-    const baseVol = Math.min(Math.abs(q.changePercent) / 100, 0.04);
+    // Adaptive threshold based on regime and confluence
+    const baseThreshold = regime === 'VOLATILE' ? 0.25 : regime === 'SIDEWAYS' ? 0.20 : 0.15;
+    const threshold = baseThreshold * (confluence < 0.5 ? 1.4 : 1.0);
+
+    const trend = normalizedScore >= threshold ? 'UP' : normalizedScore <= -threshold ? 'DOWN' : 'Neutral';
+
+    // ─── Confidence (multi-factor) ─────────────────────────────────────────────
+    const baseConf = Math.min(Math.abs(normalizedScore) / 0.6, 1); // 0–1
+    const confFromConfluence = confluence; // 0–1
+    const rawConf = (baseConf * 0.6 + confFromConfluence * 0.4);
+    const confMin = trend === 'Neutral' ? 42 : 55;
+    const confMax = trend === 'Neutral' ? 57 : 88;
+    const confidence = confMin + rawConf * (confMax - confMin);
+
+    // ─── ATR-Based Target Price ────────────────────────────────────────────────
+    let atr = 0;
+    if (q.recentHighs && q.recentLows && q.recentCloses && q.recentCloses.length >= 3) {
+        const candles: Candle[] = q.recentCloses.map((c, i) => ({ o: q.recentOpens?.[i] ?? c, h: q.recentHighs![i], l: q.recentLows![i], c }));
+        atr = calcATR(candles);
+    }
+    const betaMul = Math.max(0.6, Math.min(q.beta ?? 1.0, 2.5));
+    const atrMul = atr > 0 ? (atr / q.price) : Math.min(Math.abs(q.changePercent) / 100, 0.03);
+
+    // 3-day move = ATR * beta factor * confidence * direction multiplier
+    const confFactor = 0.8 + rawConf * 0.6; // 0.8–1.4
+    const moveBase = Math.min(atrMul * betaMul * confFactor * 2.5, 0.12);
+    const scoreFactor = 1 + Math.min(Math.abs(normalizedScore) * 0.3, 0.5);
+
     let targetPrice = q.price;
     let targetNextDay = q.price;
 
     if (trend === 'UP') {
-        const move = Math.min((0.015 + baseVol * betaMul + (score > 5 ? 0.02 : 0)), 0.10);
-        const nextMove = move * 0.45; // Roughly 45% of 3-day move for first day
-        targetPrice = q.price * (1 + move);
-        targetNextDay = q.price * (1 + nextMove);
+        const move3d = moveBase * scoreFactor;
+        targetPrice = q.price * (1 + move3d);
+        targetNextDay = q.price * (1 + move3d * 0.38);
     } else if (trend === 'DOWN') {
-        const move = Math.min((0.012 + baseVol * betaMul + (Math.abs(score) > 5 ? 0.015 : 0)), 0.10);
-        const nextMove = move * 0.45;
-        targetPrice = q.price * (1 - move);
-        targetNextDay = q.price * (1 - nextMove);
+        const move3d = moveBase * scoreFactor * 0.9;
+        targetPrice = q.price * (1 - move3d);
+        targetNextDay = q.price * (1 - move3d * 0.38);
     } else {
-        targetPrice = q.price * (1 + (q.changePercent > 0 ? 0.003 : -0.003));
-        targetNextDay = q.price * (1 + (q.changePercent > 0 ? 0.001 : -0.001));
+        const nudge = atrMul * 0.3 * (q.changePercent > 0 ? 1 : -1);
+        targetPrice = q.price * (1 + nudge);
+        targetNextDay = q.price * (1 + nudge * 0.4);
     }
 
-    // Forecast dates (skip weekends)
+    // ─── Regime label for display ─────────────────────────────────────────────
+    const regimeLabel = regime === 'TRENDING_UP' ? '📈 Trending Up' : regime === 'TRENDING_DOWN' ? '📉 Trending Down' : regime === 'VOLATILE' ? '⚡ Volatile' : '↔ Sideways';
+
+    // ─── Forecast dates ────────────────────────────────────────────────────────
     const startDate = new Date();
     const endDate = new Date();
-    let days = 0;
-    while (days < 3) {
+    let daysCount = 0;
+    while (daysCount < 3) {
         endDate.setDate(endDate.getDate() + 1);
-        if (endDate.getDay() !== 0 && endDate.getDay() !== 6) days++;
+        if (endDate.getDay() !== 0 && endDate.getDay() !== 6) daysCount++;
     }
     const fmt = (d: Date) => d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
 
-    const topDetail = details[0] || (trend === 'UP' ? 'แนวโน้มหลายมิติบวก' : trend === 'DOWN' ? 'ตัวบ่งชี้ส่วนใหญ่ลบ' : 'รอยืนยันเทรนด์');
+    // ─── Top signal for reasoning ─────────────────────────────────────────────
+    const topSignal = signals
+        .filter(s => s.signal !== 'neutral')
+        .sort((a, b) => Math.abs(b.score * b.weight) - Math.abs(a.score * a.weight))[0];
+    const topDetail = topSignal?.label ?? (trend === 'UP' ? 'สัญญาณบวกหลายมิติ' : trend === 'DOWN' ? 'สัญญาณลบหลายมิติ' : 'รอยืนยันเทรนด์');
+
     const reasoning = trend === 'UP'
-        ? `สัญญาณซื้อ: ${topDetail} — Confidence ${confidence.toFixed(1)}%`
+        ? `[${regimeLabel}] สัญญาณซื้อ: ${topDetail} — ${bullSignals}/${totalSignals} signals บวก — Confidence ${confidence.toFixed(1)}%`
         : trend === 'DOWN'
-            ? `สัญญาณขาย: ${topDetail} — Confidence ${confidence.toFixed(1)}%`
-            : `Sideways: ${topDetail} — รอสัญญาณยืนยัน`;
+            ? `[${regimeLabel}] สัญญาณขาย: ${topDetail} — ${bearSignals}/${totalSignals} signals ลบ — Confidence ${confidence.toFixed(1)}%`
+            : `[${regimeLabel}] Sideways: สัญญาณ Mixed — ${bullSignals} บวก vs ${bearSignals} ลบ — รอยืนยัน`;
 
     return {
         trend,
@@ -462,6 +589,6 @@ export const getPrediction = (q: StockQuote): PredictionResult => {
         reasoning,
         symbol: q.symbol,
         currentPrice: q.price,
-        reasoningPoints
+        reasoningPoints: signals.map(s => ({ label: s.label, value: s.value, signal: s.signal }))
     };
 };

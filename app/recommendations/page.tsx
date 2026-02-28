@@ -171,9 +171,23 @@ const StockItem = ({ stock }: { stock: RecommendedStock }) => (
         >
             <Stack direction="row" spacing={2}>
                 <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>Est. (1D)</Typography>
-                    <Typography variant="body2" className="font-mono" sx={{ fontWeight: 800, color: '#38bdf8' }}>
-                        ${stock.predictionTarget?.toFixed(2)}
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>
+                        Est. Move (1D)
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        className="font-mono"
+                        sx={{
+                            fontWeight: 800,
+                            color: stock.predictionTarget && stock.price
+                                ? (stock.predictionTarget >= stock.price ? '#4ade80' : '#f87171')
+                                : '#38bdf8'
+                        }}
+                    >
+                        {stock.predictionTarget && stock.price
+                            ? `${stock.predictionTarget >= stock.price ? '+' : ''}${(((stock.predictionTarget - stock.price) / stock.price) * 100).toFixed(2)}%`
+                            : '-'
+                        }
                     </Typography>
                 </Box>
                 <Box>

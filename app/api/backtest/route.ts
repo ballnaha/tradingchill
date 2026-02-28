@@ -128,8 +128,8 @@ export async function GET(request: Request) {
             const prevPrice = i > 0 ? closes[i - 1] : currentPrice;
             const avgVol10d = i >= 10 ? slicedVols.slice(-11, -1).reduce((a, b) => a + b, 0) / 10 : (slicedVols.reduce((a, b) => a + b, 0) / (i + 1));
 
-            // OHLC for candlestick
-            const sliceLen = Math.min(5, i + 1);
+            // OHLC for candlestick + divergence/slope (need 10 candles)
+            const sliceLen = Math.min(10, i + 1);
             const recentOpens = opens.slice(i + 1 - sliceLen, i + 1);
             const recentHighs = highs.slice(i + 1 - sliceLen, i + 1);
             const recentLows = lows.slice(i + 1 - sliceLen, i + 1);
