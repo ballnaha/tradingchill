@@ -211,6 +211,65 @@ function calcSlope(values: number[]): number {
     return den === 0 ? 0 : num / den;
 }
 
+// ─── Close Location Value — where close sits in day's range ───────────────────
+function calcCLV(high: number, low: number, close: number): number {
+    if (high === low) return 0;
+    return ((close - low) - (high - close)) / (high - low); // -1 to +1
+}
+
+// ─── Count consecutive up or down days ────────────────────────────────────────
+function countConsecutiveDays(closes: number[]): { direction: 'up' | 'down' | 'flat'; count: number } {
+    if (closes.length < 2) return { direction: 'flat', count: 0 };
+    let count = 0;
+    let lastDir: 'up' | 'down' | 'flat' = 'flat';
+    for (let i = closes.length - 1; i > 0; i--) {
+        const dir = closes[i] > closes[i - 1] ? 'up' : closes[i] < closes[i - 1] ? 'down' : 'flat';
+        if (dir === 'flat') break;
+        if (lastDir === 'flat') lastDir = dir;
+        if (dir !== lastDir) break;
+        count++;
+    }
+    return { direction: lastDir, count };
+}
+
+// ─── Narrow Range Detection (NR4/NR7) — Volatility Squeeze ───────────────────
+function detectNarrowRange(highs: number[], lows: number[]): { isNR4: boolean; isNR7: boolean } {
+    if (highs.length < 7) return { isNR4: false, isNR7: false };
+    const ranges = highs.map((h, i) => h - lows[i]);
+    const currentRange = ranges[ranges.length - 1];
+    return {
+        isNR4: currentRange <= Math.min(...ranges.slice(-4)),
+        isNR7: currentRange <= Math.min(...ranges.slice(-7)),
+    };
+}
+
+// ─── Short-term Stochastic %K ─────────────────────────────────────────────────
+function calcStochastic(closes: number[], highs: number[], lows: number[], period: number = 5): number | null {
+    if (closes.length < period) return null;
+    const h = highs.slice(-period);
+    const l = lows.slice(-period);
+    const highest = Math.max(...h);
+    const lowest = Math.min(...l);
+    if (highest === lowest) return 50;
+    return ((closes[closes.length - 1] - lowest) / (highest - lowest)) * 100;
+}
+
+// ─── Swing Structure (HH/HL or LH/LL) ────────────────────────────────────────
+function detectSwingStructure(highs: number[], lows: number[]): 'bullish' | 'bearish' | 'neutral' {
+    if (highs.length < 6) return 'neutral';
+    const h = highs.slice(-6);
+    const l = lows.slice(-6);
+    const sH = [Math.max(h[0], h[1]), Math.max(h[2], h[3]), Math.max(h[4], h[5])];
+    const sL = [Math.min(l[0], l[1]), Math.min(l[2], l[3]), Math.min(l[4], l[5])];
+    const hh = sH[2] > sH[1] && sH[1] > sH[0];
+    const hl = sL[2] > sL[1] && sL[1] > sL[0];
+    const lh = sH[2] < sH[1] && sH[1] < sH[0];
+    const ll = sL[2] < sL[1] && sL[1] < sL[0];
+    if (hh && hl) return 'bullish';
+    if (lh && ll) return 'bearish';
+    return 'neutral';
+}
+
 // ─── Main Prediction Function ── Professional Edition ─────────────────────────
 export const getPrediction = (q: StockQuote): PredictionResult => {
     const signals: Signal[] = [];
@@ -494,6 +553,100 @@ export const getPrediction = (q: StockQuote): PredictionResult => {
         signals.push({ score: 0, weight: 0.5, label: 'Price Action วันนี้', value: `${q.changePercent >= 0 ? '+' : ''}${q.changePercent.toFixed(2)}% → Consolidation ราคาทรง`, signal: 'neutral' });
     }
 
+    // ─── 15. Mean Reversion (Consecutive Days) ───────────────────────────────
+    if (q.recentCloses && q.recentCloses.length >= 4) {
+        const streak = countConsecutiveDays(q.recentCloses);
+        if (streak.count >= 4) {
+            const rv = streak.direction === 'up' ? -0.8 : 0.8;
+            signals.push({ score: rv, weight: 2.8, label: 'Mean Reversion', value: `${streak.count} วันติดต่อกัน${streak.direction === 'up' ? 'ขึ้น → สถิติชี้ว่าอาจพักตัว/ปรับฐาน' : 'ลง → สถิติชี้ว่าอาจรีบาวด์'}`, signal: rv > 0 ? 'positive' : 'negative' });
+        } else if (streak.count >= 3) {
+            const rv = streak.direction === 'up' ? -0.4 : 0.4;
+            signals.push({ score: rv, weight: 2.0, label: 'Mean Reversion', value: `${streak.count} วันติดต่อกัน${streak.direction === 'up' ? 'ขึ้น → เริ่มมีโอกาสพักตัว' : 'ลง → เริ่มมีโอกาสรีบาวด์'}`, signal: rv > 0 ? 'positive' : 'negative' });
+        }
+    }
+
+    // ─── 16. Close Location Value (CLV) + Accumulation/Distribution ──────────
+    {
+        const clv = calcCLV(q.high, q.low, q.price);
+        if (Math.abs(clv) > 0.3) {
+            const cs = clv > 0 ? Math.min(clv * 0.8, 1) : Math.max(clv * 0.8, -1);
+            signals.push({ score: cs, weight: 2.0, label: 'Close Location', value: `ราคาปิด${clv > 0.6 ? 'ใกล้ High' : clv > 0 ? 'เหนือกึ่งกลาง' : clv > -0.6 ? 'ใต้กึ่งกลาง' : 'ใกล้ Low'} ของวัน (${(clv * 100).toFixed(0)}%) → ${clv > 0 ? 'แรงซื้อคุม' : 'แรงขายคุม'}`, signal: clv > 0.3 ? 'positive' : 'negative' });
+        }
+        if (q.recentHighs && q.recentLows && q.recentCloses && q.recentCloses.length >= 5) {
+            let clvSum = 0;
+            for (let j = q.recentCloses.length - 5; j < q.recentCloses.length; j++) {
+                clvSum += calcCLV(q.recentHighs[j], q.recentLows[j], q.recentCloses[j]);
+            }
+            const avgCLV = clvSum / 5;
+            if (Math.abs(avgCLV) > 0.3) {
+                signals.push({ score: avgCLV > 0 ? 0.6 : -0.6, weight: 1.8, label: 'Accumulation/Distribution', value: `CLV เฉลี่ย 5 วัน: ${(avgCLV * 100).toFixed(0)}% → ${avgCLV > 0 ? 'สัญญาณ Accumulation (สะสม)' : 'สัญญาณ Distribution (ทยอยขาย)'}`, signal: avgCLV > 0 ? 'positive' : 'negative' });
+            }
+        }
+    }
+
+    // ─── 17. Gap Analysis ────────────────────────────────────────────────────
+    if (q.recentCloses && q.recentOpens && q.recentCloses.length >= 2) {
+        const prevClose = q.recentCloses[q.recentCloses.length - 2];
+        const todayOpen = q.recentOpens[q.recentOpens.length - 1];
+        const gapPct = ((todayOpen - prevClose) / prevClose) * 100;
+        if (Math.abs(gapPct) > 0.5) {
+            const gapFilled = gapPct > 0 ? q.low <= prevClose : q.high >= prevClose;
+            if (gapPct > 1.0 && !gapFilled) {
+                signals.push({ score: 0.8, weight: 2.2, label: 'Gap Analysis', value: `Gap Up +${gapPct.toFixed(2)}% ไม่ถูกปิด → แรงซื้อแข็ง Breakaway Gap`, signal: 'positive' });
+            } else if (gapPct > 0.5 && gapFilled) {
+                signals.push({ score: -0.3, weight: 1.5, label: 'Gap Analysis', value: `Gap Up +${gapPct.toFixed(2)}% ถูกปิดแล้ว → แรงซื้ออ่อนแอ`, signal: 'negative' });
+            } else if (gapPct < -1.0 && !gapFilled) {
+                signals.push({ score: -0.8, weight: 2.2, label: 'Gap Analysis', value: `Gap Down ${gapPct.toFixed(2)}% ไม่ถูกปิด → แรงขายแข็ง`, signal: 'negative' });
+            } else if (gapPct < -0.5 && gapFilled) {
+                signals.push({ score: 0.3, weight: 1.5, label: 'Gap Analysis', value: `Gap Down ${gapPct.toFixed(2)}% ถูกปิดแล้ว → แรงขายอ่อนแอ`, signal: 'positive' });
+            }
+        }
+    }
+
+    // ─── 18. Stochastic Oscillator (Short-term 5d) ───────────────────────────
+    if (q.recentCloses && q.recentHighs && q.recentLows && q.recentCloses.length >= 5) {
+        const stochK = calcStochastic(q.recentCloses, q.recentHighs, q.recentLows, 5);
+        if (stochK !== null) {
+            let ss = 0; let sl = ''; let sg: 'positive' | 'negative' | 'neutral' = 'neutral';
+            if (stochK >= 80) { ss = -0.5; sl = `Stochastic %K ${stochK.toFixed(0)}% → Overbought ระยะสั้น อาจพักตัว`; sg = 'negative'; }
+            else if (stochK <= 20) { ss = 0.5; sl = `Stochastic %K ${stochK.toFixed(0)}% → Oversold ระยะสั้น อาจรีบาวด์`; sg = 'positive'; }
+            else if (stochK >= 50) { ss = 0.2; sl = `Stochastic %K ${stochK.toFixed(0)}% → Bullish Zone`; sg = 'positive'; }
+            else { ss = -0.2; sl = `Stochastic %K ${stochK.toFixed(0)}% → Bearish Zone`; sg = 'negative'; }
+            signals.push({ score: ss, weight: 2.0, label: 'Stochastic (5d)', value: sl, signal: sg });
+        }
+    }
+
+    // ─── 19. Swing Structure (HH/HL or LH/LL) ──────────────────────────────
+    if (q.recentHighs && q.recentLows && q.recentHighs.length >= 6) {
+        const structure = detectSwingStructure(q.recentHighs, q.recentLows);
+        if (structure !== 'neutral') {
+            signals.push({ score: structure === 'bullish' ? 0.7 : -0.7, weight: 2.2, label: 'Swing Structure', value: structure === 'bullish' ? 'Higher Highs + Higher Lows → โครงสร้างขาขึ้นชัดเจน' : 'Lower Highs + Lower Lows → โครงสร้างขาลงชัดเจน', signal: structure === 'bullish' ? 'positive' : 'negative' });
+        }
+    }
+
+    // ─── 20. Narrow Range (NR4/NR7) — Volatility Squeeze ────────────────────
+    if (q.recentHighs && q.recentLows && q.recentHighs.length >= 7) {
+        const nr = detectNarrowRange(q.recentHighs, q.recentLows);
+        if (nr.isNR7) {
+            signals.push({ score: 0, weight: 1.5, label: 'Volatility Squeeze (NR7)', value: '⚡ Narrow Range 7 วัน → พร้อม Breakout รุนแรง รอทิศทางจาก Indicator อื่น', signal: 'neutral' });
+        } else if (nr.isNR4) {
+            signals.push({ score: 0, weight: 1.0, label: 'Volatility Squeeze (NR4)', value: '⚡ Narrow Range 4 วัน → สะสมพลังงาน อาจเกิดการเคลื่อนไหวแรง', signal: 'neutral' });
+        }
+    }
+
+    // ─── 21. Volume Spread Analysis (VSA) ────────────────────────────────────
+    if (q.volume && q.avgVolume10d && q.avgVolume10d > 0 && q.recentHighs && q.recentLows && q.recentHighs.length >= 5) {
+        const spreads = q.recentHighs.map((h, i) => h - q.recentLows![i]);
+        const avgSpread = spreads.slice(0, -1).reduce((a, b) => a + b, 0) / (spreads.length - 1);
+        const currentSpread = spreads[spreads.length - 1];
+        const vr = q.volume / q.avgVolume10d;
+        if (vr > 1.5 && currentSpread < avgSpread * 0.7) {
+            signals.push({ score: q.changePercent > 0 ? -0.6 : 0.6, weight: 2.5, label: 'Volume Spread Analysis', value: `Volume สูง + Range แคบ → Churning ${q.changePercent > 0 ? '(แรงขายซ่อนตัว อาจกลับทิศ)' : '(แรงซื้อซ่อนตัว อาจกลับทิศ)'}`, signal: q.changePercent > 0 ? 'negative' : 'positive' });
+        } else if (vr < 0.7 && currentSpread > avgSpread * 1.3) {
+            signals.push({ score: q.changePercent > 0 ? -0.4 : 0.4, weight: 1.8, label: 'Volume Spread Analysis', value: `Volume ต่ำ + Range กว้าง → การเคลื่อนไหวไม่ยั่งยืน อาจกลับทิศ`, signal: q.changePercent > 0 ? 'negative' : 'positive' });
+        }
+    }
+
     // ─── WEIGHTED SCORE CALCULATION ───────────────────────────────────────────
     let weightedSum = 0;
     let totalWeight = 0;
@@ -515,12 +668,21 @@ export const getPrediction = (q: StockQuote): PredictionResult => {
 
     const trend = normalizedScore >= threshold ? 'UP' : normalizedScore <= -threshold ? 'DOWN' : 'Neutral';
 
-    // ─── Confidence (multi-factor) ─────────────────────────────────────────────
-    const baseConf = Math.min(Math.abs(normalizedScore) / 0.6, 1); // 0–1
+    // ─── Confidence (multi-factor + signal agreement) ─────────────────────────
+    const baseConf = Math.min(Math.abs(normalizedScore) / 0.5, 1); // 0–1, more sensitive
     const confFromConfluence = confluence; // 0–1
-    const rawConf = (baseConf * 0.6 + confFromConfluence * 0.4);
-    const confMin = trend === 'Neutral' ? 42 : 55;
-    const confMax = trend === 'Neutral' ? 57 : 88;
+    // Signal agreement: what % of weighted signals agree with the trend direction
+    let agreeWeight = 0, totalWt = 0;
+    for (const s of signals) {
+        totalWt += s.weight;
+        if (trend === 'UP' && s.score > 0) agreeWeight += s.weight;
+        else if (trend === 'DOWN' && s.score < 0) agreeWeight += s.weight;
+        else if (trend === 'Neutral' && Math.abs(s.score) < 0.3) agreeWeight += s.weight;
+    }
+    const agreement = totalWt > 0 ? agreeWeight / totalWt : 0.5;
+    const rawConf = (baseConf * 0.40 + confFromConfluence * 0.30 + agreement * 0.30);
+    const confMin = trend === 'Neutral' ? 40 : 52;
+    const confMax = trend === 'Neutral' ? 58 : 90;
     const confidence = confMin + rawConf * (confMax - confMin);
 
     // ─── ATR-Based Target Price ────────────────────────────────────────────────
