@@ -4,11 +4,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import {
     Container, Box, Typography, Card, Stack, Chip,
-    Button, Divider, LinearProgress,
+    Button, Divider, LinearProgress, TextField, InputAdornment,
 } from '@mui/material';
 import {
     TrendUp, TrendDown, Activity, Flash, Star,
-    InfoCircle, ArrowRight2, Setting2,
+    InfoCircle, ArrowRight2, Setting2, SearchNormal1,
 } from 'iconsax-react';
 import Link from 'next/link';
 
@@ -241,6 +241,7 @@ export default function RecommendationsPage() {
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
     const [filter, setFilter] = useState<'ALL' | 'OVERSOLD' | 'HIGH_CONFIDENCE' | 'BULLISH'>('ALL');
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => { setMounted(true); fetchStocks(); }, []);
 
@@ -268,12 +269,20 @@ export default function RecommendationsPage() {
 
     const filteredStocks = useMemo(() => {
         let r = [...stocks];
+        // Apply category filter
         if (filter === 'OVERSOLD') r = r.filter(s => (s.rsi && s.rsi < 40) && s.predictionTrend === 'UP');
         else if (filter === 'HIGH_CONFIDENCE') r = r.filter(s => (s.predictionConfidence || 0) >= 80);
         else if (filter === 'BULLISH') r = r.filter(s => s.predictionTrend === 'UP');
         else r.sort((a, b) => (b.predictionConfidence || 0) - (a.predictionConfidence || 0));
+
+        // Apply search filter
+        if (searchTerm) {
+            const term = searchTerm.toUpperCase();
+            r = r.filter(s => s.symbol.toUpperCase().includes(term));
+        }
+
         return r;
-    }, [stocks, filter]);
+    }, [stocks, filter, searchTerm]);
 
     const { bull, bear } = useMemo(() => ({
         bull: filteredStocks.filter(s => s.predictionTrend === 'UP'),
@@ -332,21 +341,52 @@ export default function RecommendationsPage() {
                         )}
                     </Stack>
 
-                    {/* Filter chips — horizontal scroll on mobile */}
-                    <Box sx={{
-                        mt: { xs: 2, md: 3 },
-                        mx: { xs: -1.5, sm: 0 },
-                        px: { xs: 1.5, sm: 0 },
-                        display: 'flex', gap: 1,
-                        overflowX: 'auto',
-                        '&::-webkit-scrollbar': { display: 'none' },
-                        WebkitOverflowScrolling: 'touch',
-                    }}>
-                        <FilterBtn active={filter === 'ALL'} color="#0ea5e9" onClick={() => setFilter('ALL')} label="ทั้งหมด" icon={<Activity size={16} variant={filter === 'ALL' ? 'Bold' : 'Outline'} color="#0ea5e9" />} />
-                        <FilterBtn active={filter === 'OVERSOLD'} color="#4ade80" onClick={() => setFilter('OVERSOLD')} label="RSI < 40 + Bullish" icon={<TrendUp size={16} variant={filter === 'OVERSOLD' ? 'Bold' : 'Outline'} color="#4ade80" />} />
-                        <FilterBtn active={filter === 'HIGH_CONFIDENCE'} color="#fcd34d" onClick={() => setFilter('HIGH_CONFIDENCE')} label="Confidence > 80%" icon={<Star size={16} variant={filter === 'HIGH_CONFIDENCE' ? 'Bold' : 'Outline'} color="#fcd34d" />} />
-                        <FilterBtn active={filter === 'BULLISH'} color="#38bdf8" onClick={() => setFilter('BULLISH')} label="Bullish" icon={<Flash size={16} variant={filter === 'BULLISH' ? 'Bold' : 'Outline'} color="#38bdf8" />} />
-                    </Box>
+                    {/* Search and Filters */}
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: { xs: 2, md: 3 } }}>
+                        {/* Search Box */}
+                        <TextField
+                            placeholder="ค้นหารหัสหุ้น..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            sx={{
+                                minWidth: { md: 300 },
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 10,
+                                    bgcolor: 'rgba(255,255,255,0.03)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    px: 2,
+                                    height: 44,
+                                    fontSize: '0.85rem',
+                                    transition: 'all 0.3s',
+                                    color: 'white',
+                                    '& fieldset': { border: 'none' },
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(56, 189, 248, 0.5)' },
+                                    '&.Mui-focused': { bgcolor: 'rgba(56, 189, 248, 0.05)', borderColor: '#38bdf8' }
+                                }
+                            }}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchNormal1 size="18" color="#38bdf8" />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+
+                        {/* Filter chips — horizontal scroll on mobile */}
+                        <Box sx={{
+                            display: 'flex', gap: 1,
+                            overflowX: 'auto',
+                            '&::-webkit-scrollbar': { display: 'none' },
+                            WebkitOverflowScrolling: 'touch',
+                            flex: 1
+                        }}>
+                            <FilterBtn active={filter === 'ALL'} color="#0ea5e9" onClick={() => setFilter('ALL')} label="ทั้งหมด" icon={<Activity size={16} variant={filter === 'ALL' ? 'Bold' : 'Outline'} color="#0ea5e9" />} />
+                            <FilterBtn active={filter === 'OVERSOLD'} color="#4ade80" onClick={() => setFilter('OVERSOLD')} label="RSI < 40 + Bullish" icon={<TrendUp size={16} variant={filter === 'OVERSOLD' ? 'Bold' : 'Outline'} color="#4ade80" />} />
+                            <FilterBtn active={filter === 'HIGH_CONFIDENCE'} color="#fcd34d" onClick={() => setFilter('HIGH_CONFIDENCE')} label="Confidence > 80%" icon={<Star size={16} variant={filter === 'HIGH_CONFIDENCE' ? 'Bold' : 'Outline'} color="#fcd34d" />} />
+                            <FilterBtn active={filter === 'BULLISH'} color="#38bdf8" onClick={() => setFilter('BULLISH')} label="Bullish" icon={<Flash size={16} variant={filter === 'BULLISH' ? 'Bold' : 'Outline'} color="#38bdf8" />} />
+                        </Box>
+                    </Stack>
                 </Box>
 
                 {/* ── Content ────────────────────────────────── */}
