@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        console.log(`[Cache Miss] Fetching ${symbol} from Finnhub`);
+        console.log(`[Cache Miss] Fetching ${symbol} from multiple sources`);
         const lastWeek = new Date();
         lastWeek.setDate(lastWeek.getDate() - 7);
         const fromDate = lastWeek.toISOString().split('T')[0];
@@ -44,10 +44,33 @@ export async function GET(req: NextRequest) {
             fetch(`https://finnhub.io/api/v1/stock/recommendation?symbol=${symbol}&token=${FINNHUB_KEY}`).then(r => r.json()),
             fetch(`https://finnhub.io/api/v1/quote?symbol=SPY&token=${FINNHUB_KEY}`).then(r => r.json()),
             fetch(`https://finnhub.io/api/v1/stock/earnings?symbol=${symbol}&limit=1&token=${FINNHUB_KEY}`).then(r => r.json()).catch(() => null),
-            fetch(`https://finnhub.io/api/v1/company-news?symbol=${symbol}&from=${fromDate}&to=${toDate}&token=${FINNHUB_KEY}`).then(r => r.json()).catch(() => [])
+            fetch(`https://finnhub.io/api/v1/company-news?symbol=${symbol}&from=${fromDate}&to=${toDate}&token=${FINNHUB_KEY}`).then(r => r.json()).catch(() => []),
+            // Yahoo Finance Fallback for better real-time price
+            fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1m&range=1d`, {
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+            }).then(r => r.json()).catch(() => null)
         ];
 
-        const [quote, metrics, profile, recommendations, spy, earnings, news] = await Promise.all(promises);
+        const [quote, metrics, profile, recommendations, spy, earnings, news, yahooData] = await Promise.all(promises);
+
+        // Try to enrich Finnhub quote with Yahoo Finance real-time data if available
+        if (yahooData?.chart?.result?.[0]?.meta) {
+            const meta = yahooData.chart.result[0].meta;
+            const yahooPrice = meta.regularMarketPrice;
+            const yahooPrevClose = meta.previousClose;
+            
+            // Log for debugging
+            console.log(`[Price Comparison] ${symbol} - Finnhub: ${quote.c}, Yahoo: ${yahooPrice}`);
+
+            // If Yahoo price exists and is different, we can prefer it or merge
+            if (yahooPrice && Math.abs(quote.c - yahooPrice) > 0.01) {
+                quote.c = yahooPrice;
+                quote.pc = yahooPrevClose || quote.pc;
+                quote.d = quote.c - quote.pc;
+                quote.dp = (quote.d / quote.pc) * 100;
+                console.log(`[Price Update] Using Yahoo Finance price for ${symbol}: ${yahooPrice}`);
+            }
+        }
 
         const responseData = {
             quote,
